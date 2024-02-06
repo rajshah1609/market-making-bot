@@ -120,3 +120,7 @@ async function isCorrectIP(ip) {
     return false;
   }
 }
+
+global.stonexToken = "";
+
+global.stonexExpiry = "";

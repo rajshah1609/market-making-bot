@@ -6,4 +6,6 @@ var router = express.Router();
 
 router.get("/getusdrates", indexController.getUSDRates);
 
+router.get("/test", indexController.test);
+
 module.exports = router;

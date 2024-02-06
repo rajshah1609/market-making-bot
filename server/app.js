@@ -60,9 +60,12 @@ require("events").EventEmitter.defaultMaxListeners = 20;
 
 const indexRouter = require("./routes/index");
 const adminRouter = require("./routes/admin");
-const spreadBotRouter = require("./routes/spreadBot");
+// const spreadBotRouter = require("./routes/spreadBot");
 const bitrue = require("./helpers/exchangeHelpers/bitrue");
-const bittrex = require("./helpers/exchangeHelpers/bittrex");
+const stonex = require("./helpers/exchangeHelpers/stonex");
+const { RedisClient } = require("./services/redis");
+const { ounceConversion } = require("./helpers/constant");
+// const bittrex = require("./helpers/exchangeHelpers/bittrex");
 
 const NetLogger = require("./helpers/networkLogger").NetLogger;
 
@@ -88,7 +91,7 @@ app.use(cors());
 
 app.use("/", indexRouter);
 app.use("/api/admin", adminRouter);
-app.use("/api/spreadbot", spreadBotRouter);
+// app.use("/api/spreadbot", spreadBotRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -109,18 +112,7 @@ app.use(function (err, req, res, next) {
 logger.info("[", logSymbols.success, "] server started");
 
 async function updatePrices() {
-  const currencies = [
-    "XDC",
-    "SRX",
-    "PLI",
-    "LBT",
-    "USPLUS",
-    "FXD",
-    "PRNT",
-    "GBEX",
-    "XTT",
-    "XSP",
-  ];
+  const currencies = ["XDC", "FXD"];
   let i,
     orderBook,
     query = {},
@@ -137,27 +129,58 @@ async function updatePrices() {
   InternalBus.emit(GlobalEvents.converter_price, query);
 }
 
-//EUR price update
-async function updateEURPrice() {
-  let query = {};
-  const EURUSDTBook = await bittrex.orderBook("USDT-EUR");
-  if (EURUSDTBook.bids[1] && EURUSDTBook.asks[1])
-    query[`EUR-USDT`] = {
-      bid: [parseFloat(parseFloat(1 / EURUSDTBook.asks[1].rate).toFixed(8))],
-      ask: [parseFloat(parseFloat(1 / EURUSDTBook.bids[1].rate).toFixed(8))],
-    };
-  InternalBus.emit(GlobalEvents.converter_price, query);
+//update gold rates from stonex
+async function updateStonexRate() {
+  try {
+    const rates = await stonex.fetchPrice("XAU-USD");
+    if (Object.entries(rates).length != 0) {
+      const bidOunce = parseFloat(rates[0].bid[0]);
+      const askOunce = parseFloat(rates[0].offer[0]);
+      const bidGm = (bidOunce / ounceConversion) * 0.999;
+      const askGm = (askOunce / ounceConversion) * 1.001;
+      let query = {};
+      query[`CGO-USDT`] = {
+        bid: [parseFloat(parseFloat(bidGm).toFixed(6))],
+        ask: [parseFloat(parseFloat(askGm).toFixed(6))],
+      };
+      InternalBus.emit(GlobalEvents.converter_price, query);
+      console.log(query);
+      await RedisClient.set("priceUpdatedFromMarket", "true");
+    } else {
+      await RedisClient.set("priceUpdatedFromMarket", "false");
+    }
+  } catch (error) {
+    logger.error(`app_updateStonexRate_error`, error);
+    await RedisClient.set("priceUpdatedFromMarket", "false");
+  }
 }
 
+updateStonexRate();
 updatePrices();
-updateEURPrice();
+
+setInterval(async () => {
+  updateStonexRate();
+}, 30000);
 
 setInterval(async () => {
   updatePrices();
 }, 300000);
 
-setInterval(async () => {
-  updateEURPrice();
-}, 120000);
+//EUR price update
+// async function updateEURPrice() {
+//   let query = {};
+//   const EURUSDTBook = await bittrex.orderBook("USDT-EUR");
+//   if (EURUSDTBook.bids[1] && EURUSDTBook.asks[1])
+//     query[`EUR-USDT`] = {
+//       bid: [parseFloat(parseFloat(1 / EURUSDTBook.asks[1].rate).toFixed(8))],
+//       ask: [parseFloat(parseFloat(1 / EURUSDTBook.bids[1].rate).toFixed(8))],
+//     };
+//   InternalBus.emit(GlobalEvents.converter_price, query);
+// }
+
+// updateEURPrice();
+// setInterval(async () => {
+//   updateEURPrice();
+// }, 120000);
 
 module.exports = app;

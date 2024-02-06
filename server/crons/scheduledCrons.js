@@ -15,12 +15,16 @@ const spreadBotController = require("../controllers/spreadBotController");
 new CronJob(
   "14 * * * * *",
   async () => {
+    await spreadBotController.resetFlags();
     await spreadBotController.autoCancelOrders();
-    await spreadBotController.runBot();
+    await spreadBotController.generateOrders();
+    await spreadBotController.placeOrders();
     await spreadBotController.updateCancellingOrders();
     await spreadBotController.updateOrdersMin();
-    await spreadBotController.placeFailedOrders();
-    await spreadBotController.checkOrderNumbers();
+    await spreadBotController.cancelExtraOrders();
+    await spreadBotController.placeExternalOrders();
+    // await spreadBotController.placeFailedOrders();
+    // await spreadBotController.checkOrderNumbers();
   },
   null,
   true,

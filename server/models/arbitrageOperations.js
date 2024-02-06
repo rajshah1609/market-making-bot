@@ -21,6 +21,7 @@ const arbitrageOperationsSchema = mongoose.Schema(
     status: { type: Boolean, default: false },
     activeOrderTolerance: Number,
     statusMsg: String,
+    cgoData: {},
   },
   {
     timestamps: true,

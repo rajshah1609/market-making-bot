@@ -109,6 +109,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("get_wallet_balance", () => {
+    console.log("get_wallet_balance");
     emitStarterData("wallet", socket);
   });
 

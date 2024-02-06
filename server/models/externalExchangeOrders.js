@@ -1,29 +1,26 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-let spreadBotOrders = new Schema(
+let externalExchangeOrders = new Schema(
   {
-    orderId: { type: String, required: true },
-    uniqueId: { type: String, unique: true, required: true },
-    mappingId: { type: String, required: true },
+    uniqueId: { type: String, required: true, unique: true },
     exchange: { type: String, required: true },
     pair: { type: String, required: true },
+    exchangePair: { type: String, required: true },
     type: { type: String, required: true },
     price: { type: Number, required: true, default: 0 },
     usdtPrice: { type: Number, required: true, default: 0 },
     originalQty: { type: Number, required: true, default: 0 },
     filledQty: { type: Number, required: true, default: 0 },
     total: { type: Number, required: true, default: 0 },
-    usdtTotal: { type: Number, required: true, default: 0 },
     updatedTotal: { type: Number, required: true, default: 0 },
-    updatedUsdtTotal: { type: Number, required: true, default: 0 },
+    orderId: { type: String, required: true },
+    mappedOrders: [],
+    status: { type: String, required: true, default: "active" },
     fees: { type: Number, default: 0 },
     feeCurrency: { type: String, default: "USD" },
     feesUSDT: { type: Number, default: 0 },
-    status: { type: String, required: true, default: "active" },
-    cancelling: { type: Boolean, default: false },
-    externalExchangeId: { type: String, default: "pending" },
-    // refId: { type: String },
+    deletedAt: { type: String },
   },
   {
     timestamps: true,
@@ -31,4 +28,7 @@ let spreadBotOrders = new Schema(
 );
 
 //export the model
-module.exports = mongoose.model("spreadBotOrders", spreadBotOrders);
+module.exports = mongoose.model(
+  "externalExchangeOrders",
+  externalExchangeOrders
+);

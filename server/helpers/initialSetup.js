@@ -12,6 +12,7 @@ const path = require("path");
 const crypto = require("crypto");
 const logSymbols = require("log-symbols");
 const dailyData = require("../models/dailyData");
+const arbitrageOperations = require("../models/arbitrageOperations");
 
 module.exports = {
   checkSetup: async () => {
@@ -58,6 +59,28 @@ module.exports = {
       //   data = fs.readFileSync(path.resolve(__dirname, "data.json"), "UTF-8");
       //   secret = JSON.parse(data).secret;
       // }
+
+      //create arbitrage operation
+      const arbiOperation = await arbitrageOperations.findOne({});
+      if (!arbiOperation) {
+        const newOperation = new arbitrageOperations({
+          // minAmount,
+          // maxAmount:minAmount,
+          minAmount: {},
+          maxAmount: {},
+          minPriceBy: "total_amount",
+          minPrice: {},
+          virtualArbitrage: false,
+          connectionDetails: {
+            buy: {},
+            sell: {},
+          },
+          cgoData: { generatedMarketClosedOrders: false, lastPrice: 0 },
+        });
+        console.log(newOperation);
+        await newOperation.save();
+      }
+
       let i,
         j,
         k,

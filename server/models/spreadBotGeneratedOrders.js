@@ -8,6 +8,7 @@ let spreadBotGeneratedOrders = new Schema(
     type: { type: String, required: true },
     usdtPrice: { type: Number, required: true, default: 0 },
     status: { type: String, required: true, default: "active" },
+    multiplyer: { type: Number },
     revOrderId: { type: String, default: "" },
     oppOrderId: { type: String, default: "" },
     mappedOrders: [],
