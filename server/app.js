@@ -91,7 +91,7 @@ app.use(cors());
 
 app.use("/", indexRouter);
 app.use("/api/admin", adminRouter);
-// app.use("/api/spreadbot", spreadBotRouter);
+app.use("/api/spreadbot", spreadBotRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
