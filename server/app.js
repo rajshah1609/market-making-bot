@@ -60,7 +60,7 @@ require("events").EventEmitter.defaultMaxListeners = 20;
 
 const indexRouter = require("./routes/index");
 const adminRouter = require("./routes/admin");
-// const spreadBotRouter = require("./routes/spreadBot");
+const spreadBotRouter = require("./routes/spreadBot");
 const bitrue = require("./helpers/exchangeHelpers/bitrue");
 const stonex = require("./helpers/exchangeHelpers/stonex");
 const { RedisClient } = require("./services/redis");
