@@ -1,5 +1,5 @@
 const responseHelper = require("../helpers/RESPONSE");
-const { stonexPairs } = require("../helpers/constant");
+const { stonexPairs, ExchangePairInfo } = require("../helpers/constant");
 const stonex = require("../helpers/exchangeHelpers/stonex");
 const {
   LastTradedPrice,
