@@ -72,6 +72,7 @@ module.exports = {
       if (!flags["generateOrders-SBC"]) {
         flags["generateOrders-SBC"] = true;
         const orders = await spreadBotDetails.findOne({ pair: { $regex: `CGO` }, status: "active" });
+        const arbitrageData = await arbitrageOperations.findOne({});
         if (orders != null) {
           let generateOrder = true,
             i,
@@ -80,15 +81,14 @@ module.exports = {
             usdtPrice,
             newOrder;
           const isMarketOpen = await module.exports.checkMarket();
-          const arbitrageData = await arbitrageOperations.findOne({});
           if (isMarketOpen) {
             if (arbitrageData) {
               const cgoData = arbitrageData.cgoData;
               const converter = JSON.parse(
                 await RedisClient.get("converterPrice")
               );
-              const bidPrice = converter["CGO-USDT"].ask[0];
-              const askPrice = converter["CGO-USDT"].bid[0];
+              const bidPrice = converter["CGO-USDT"].bid[0];
+              const askPrice = converter["CGO-USDT"].ask[0];
               const baseUsdtPrice = parseFloat(
                 parseFloat((bidPrice + askPrice) / 2).toFixed(6)
               );
@@ -114,7 +114,7 @@ module.exports = {
               if (generateOrder) {
                 for (i = 1; i <= 10; i++) {
                   usdtPrice = parseFloat(
-                    parseFloat(baseUsdtPrice * (1 + 0.002 * i)).toFixed(6)
+                    parseFloat(askPrice * (1 + 0.002 * i)).toFixed(6)
                   );
                   uniqueId = uuid();
                   newOrder = new spreadBotGeneratedOrders({
@@ -132,7 +132,7 @@ module.exports = {
                   newOrder.save();
                   openOrders.push(uniqueId);
                   usdtPrice = parseFloat(
-                    parseFloat(baseUsdtPrice * (1 - 0.002 * i)).toFixed(6)
+                    parseFloat(bidPrice * (1 - 0.002 * i)).toFixed(6)
                   );
                   uniqueId = uuid();
                   newOrder = new spreadBotGeneratedOrders({
@@ -152,6 +152,8 @@ module.exports = {
                 }
                 arbitrageData.cgoData.lastPrice = baseUsdtPrice;
                 arbitrageData.cgoData.generatedMarketClosedOrders = false;
+                arbitrageData.cgoData.bidPrice = bidPrice;
+                arbitrageData.cgoData.askPrice = askPrice;
                 arbitrageData.markModified("cgoData");
               }
             }
@@ -228,6 +230,10 @@ module.exports = {
             { status: "cancelled" },
             { multi: true }
           );
+          arbitrageData.cgoData.lastPrice = 0;
+          arbitrageData.cgoData.generatedMarketClosedOrders = false;
+          arbitrageData.markModified("cgoData");
+          await arbitrageData.save();
         }
         flags["generateOrders-SBC"] = false;
       }
@@ -1197,6 +1203,10 @@ module.exports = {
             parseFloat(totalQty / ounceConversion).toFixed(2)
           );
           priceOz = parseFloat(parseFloat(price * ounceConversion).toFixed(2));
+          if (placeType == 'sell')
+            priceOz = parseFloat(parseFloat(priceOz * 0.997).toFixed(2));
+          else
+            priceOz = parseFloat(parseFloat(priceOz * 1.003).toFixed(2));
           const stonexTotal = parseFloat(
             parseFloat(amountOz * priceOz).toFixed(4)
           );

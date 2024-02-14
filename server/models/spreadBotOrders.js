@@ -23,7 +23,7 @@ let spreadBotOrders = new Schema(
     status: { type: String, required: true, default: "active" },
     cancelling: { type: Boolean, default: false },
     externalExchangeId: { type: String, default: "pending" },
-    // refId: { type: String },
+    refId: { type: String },
   },
   {
     timestamps: true,
