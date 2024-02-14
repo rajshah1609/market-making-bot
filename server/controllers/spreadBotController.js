@@ -1,5 +1,5 @@
 const responseHelper = require("../helpers/RESPONSE");
-const { stonexPairs, ExchangePairInfo } = require("../helpers/constant");
+const { stonexPairs, ExchangePairInfo, ounceConversion } = require("../helpers/constant");
 const stonex = require("../helpers/exchangeHelpers/stonex");
 const {
   LastTradedPrice,
@@ -7,6 +7,7 @@ const {
   WalletBalance,
   GetOrderStatus,
   PlaceOrder,
+  CancelOrder,
 } = require("../helpers/orderPlacement");
 const arbitrageOperations = require("../models/arbitrageOperations");
 const externalExchangeOrders = require("../models/externalExchangeOrders");
@@ -70,7 +71,7 @@ module.exports = {
     try {
       if (!flags["generateOrders-SBC"]) {
         flags["generateOrders-SBC"] = true;
-        const orders = await spreadBotDetails.findOne({ status: "active" });
+        const orders = await spreadBotDetails.findOne({ pair: { $regex: `CGO` }, status: "active" });
         if (orders != null) {
           let generateOrder = true,
             i,
@@ -221,6 +222,13 @@ module.exports = {
               { multi: true }
             );
         }
+        else {
+          await spreadBotGeneratedOrders.updateMany(
+            { currency: 'CGO', status: "active" },
+            { status: "cancelled" },
+            { multi: true }
+          );
+        }
         flags["generateOrders-SBC"] = false;
       }
     } catch (error) {
@@ -298,7 +306,7 @@ module.exports = {
                 exchange,
                 pair,
                 refId,
-                status: { $in: ["active"] },
+                status: "active",
               });
               if (!checkOrder) {
                 usdtPrice = generatedOrder.usdtPrice;
@@ -346,11 +354,11 @@ module.exports = {
                   maxAmount =
                     parseFloat(order.amountBuy) *
                     1.05 *
-                    parseFloat(order.multiplyer);
+                    parseFloat(generatedOrder.multiplyer);
                   minAmount =
                     parseFloat(order.amountBuy) *
                     0.95 *
-                    parseFloat(order.multiplyer);
+                    parseFloat(generatedOrder.multiplyer);
                   // }
                   amount = parseFloat(
                     parseFloat(
@@ -365,11 +373,11 @@ module.exports = {
                   maxAmount =
                     parseFloat(order.amountSell) *
                     1.05 *
-                    parseFloat(order.multiplyer);
+                    parseFloat(generatedOrder.multiplyer);
                   minAmount =
                     parseFloat(order.amountSell) *
                     0.95 *
-                    parseFloat(order.multiplyer);
+                    parseFloat(generatedOrder.multiplyer);
                   // }
                   amount = parseFloat(
                     parseFloat(
@@ -598,13 +606,13 @@ module.exports = {
               orderDetails.markModified("updatedTotalSell");
             }
             orderDetails.save();
-            generatedOrder = await spreadBotGeneratedOrders.findOne({
-              uniqueId: order.refId,
-            });
-            generatedOrder.totalFilled =
-              generatedOrder.totalFilled + updatedFilledQty * usdtPrice;
-            generatedOrder.markModified("totalFilled");
-            generatedOrder.save();
+            // generatedOrder = await spreadBotGeneratedOrders.findOne({
+            //   uniqueId: order.refId,
+            // });
+            // generatedOrder.totalFilled =
+            //   generatedOrder.totalFilled + updatedFilledQty * usdtPrice;
+            // generatedOrder.markModified("totalFilled");
+            // generatedOrder.save();
             logger.info(
               `updateOrdersMin-SBC-${min}_in 6 order ${i} order details updated`,
               orderId
@@ -794,7 +802,7 @@ module.exports = {
           price = order.price;
           usdtPrice = order.usdtPrice;
           type = order.type;
-          accountData = await orderPlacement.GetAccount(exchange, "AB");
+          accountData = await GetAccount(exchange, "AB");
           cancelData = {
             orderId,
             exchange,
@@ -804,7 +812,7 @@ module.exports = {
             usdtPrice: usdtPrice,
             ...accountData,
           };
-          await orderPlacement.CancelOrder(exchange, cancelData);
+          await CancelOrder(exchange, cancelData);
         }
         flags["autoCancel-SBC"] = false;
         flags["autoCancel-SBC-time"] = new Date();
@@ -830,39 +838,39 @@ module.exports = {
           order.status = "stopped";
           order.markModified("status");
           order.save();
-          const data = await spreadBotDetails.aggregate([
-            {
-              $match: {
-                status: "active",
-                pair: { $regex: `${order.pair.split("-")[0]}-` },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                buyTotal: { $sum: "$amountBuy" },
-                sellTotal: { $sum: "$amountSell" },
-              },
-            },
-          ]);
-          const buyTotal = data[0] ? data[0].buyTotal : 0;
-          const sellTotal = data[0] ? data[0].sellTotal : 0;
-          await spreadBotGeneratedOrders.updateMany(
-            {
-              status: "active",
-              type: "buy",
-              currency: `${order.pair.split("-")[0]}`,
-            },
-            { $set: { totalToBeFilled: buyTotal } }
-          );
-          await spreadBotGeneratedOrders.updateMany(
-            {
-              status: "active",
-              type: "sell",
-              currency: `${order.pair.split("-")[0]}`,
-            },
-            { $set: { totalToBeFilled: sellTotal } }
-          );
+          // const data = await spreadBotDetails.aggregate([
+          //   {
+          //     $match: {
+          //       status: "active",
+          //       pair: { $regex: `${order.pair.split("-")[0]}-` },
+          //     },
+          //   },
+          //   {
+          //     $group: {
+          //       _id: null,
+          //       buyTotal: { $sum: "$amountBuy" },
+          //       sellTotal: { $sum: "$amountSell" },
+          //     },
+          //   },
+          // ]);
+          // const buyTotal = data[0] ? data[0].buyTotal : 0;
+          // const sellTotal = data[0] ? data[0].sellTotal : 0;
+          // await spreadBotGeneratedOrders.updateMany(
+          //   {
+          //     status: "active",
+          //     type: "buy",
+          //     currency: `${order.pair.split("-")[0]}`,
+          //   },
+          //   { $set: { totalToBeFilled: buyTotal } }
+          // );
+          // await spreadBotGeneratedOrders.updateMany(
+          //   {
+          //     status: "active",
+          //     type: "sell",
+          //     currency: `${order.pair.split("-")[0]}`,
+          //   },
+          //   { $set: { totalToBeFilled: sellTotal } }
+          // );
           return responseHelper.successWithMessage(res, "Order Cancelled");
         } else {
           return responseHelper.errorWithMessage(res, "Order is't active");
@@ -1186,14 +1194,14 @@ module.exports = {
             ).toFixed(6)
           );
           amountOz = parseFloat(
-            parseFloat(amount / ounceConversion).toFixed(2)
+            parseFloat(totalQty / ounceConversion).toFixed(2)
           );
           priceOz = parseFloat(parseFloat(price * ounceConversion).toFixed(2));
           const stonexTotal = parseFloat(
             parseFloat(amountOz * priceOz).toFixed(4)
           );
           const stonexUsdtTotal = parseFloat(
-            parseFloat(amountOz * usdtPrice).toFixed(4)
+            parseFloat(totalQty * usdtPrice).toFixed(4)
           );
           const uniqueId = uuid();
           const orderData = {
@@ -1215,6 +1223,7 @@ module.exports = {
               type: placeType,
               price: priceOz,
               usdtPrice,
+              originalQtyGm: totalQty,
               originalQty: amountOz,
               total: stonexTotal,
               usdtTotal: stonexUsdtTotal,
@@ -1223,7 +1232,7 @@ module.exports = {
               status: "active",
             });
             await newOrder.save();
-            await spreadtBotOrders.updateMany(
+            await spreadBotOrders.updateMany(
               { uniqueId: { $in: refOrders } },
               { externalExchangeId: uniqueId },
               { multi: true }

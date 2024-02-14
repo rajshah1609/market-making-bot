@@ -1,4 +1,4 @@
-const uatURL = "https://uat.fxinside.net";
+const uatURL = "https://api3.live.fxinside.net";
 const baseURL = uatURL;
 const qs = require("qs");
 const axiosHelper = require("../axiosHelper");
