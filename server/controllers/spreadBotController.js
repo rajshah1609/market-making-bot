@@ -1,5 +1,9 @@
 const responseHelper = require("../helpers/RESPONSE");
-const { stonexPairs, ExchangePairInfo, ounceConversion } = require("../helpers/constant");
+const {
+  stonexPairs,
+  ExchangePairInfo,
+  ounceConversion,
+} = require("../helpers/constant");
 const stonex = require("../helpers/exchangeHelpers/stonex");
 const {
   LastTradedPrice,
@@ -71,7 +75,10 @@ module.exports = {
     try {
       if (!flags["generateOrders-SBC"]) {
         flags["generateOrders-SBC"] = true;
-        const orders = await spreadBotDetails.findOne({ pair: { $regex: `CGO` }, status: "active" });
+        const orders = await spreadBotDetails.findOne({
+          pair: { $regex: `CGO` },
+          status: "active",
+        });
         const arbitrageData = await arbitrageOperations.findOne({});
         if (orders != null) {
           let generateOrder = true,
@@ -223,10 +230,9 @@ module.exports = {
               { status: "cancelled" },
               { multi: true }
             );
-        }
-        else {
+        } else {
           await spreadBotGeneratedOrders.updateMany(
-            { currency: 'CGO', status: "active" },
+            { currency: "CGO", status: "active" },
             { status: "cancelled" },
             { multi: true }
           );
@@ -1189,7 +1195,7 @@ module.exports = {
               total = total + usdtTotal;
             }
           }
-          placeType = totalQty > 0 ? "buy" : "sell";
+          placeType = totalQty > 0 ? "sell" : "buy";
           totalQty = Math.abs(totalQty);
           total = Math.abs(total);
           usdtPrice = parseFloat(parseFloat(total / totalQty).toFixed(6));
@@ -1203,10 +1209,10 @@ module.exports = {
             parseFloat(totalQty / ounceConversion).toFixed(2)
           );
           priceOz = parseFloat(parseFloat(price * ounceConversion).toFixed(2));
-          if (placeType == 'sell')
-            priceOz = parseFloat(parseFloat(priceOz * 0.997).toFixed(2));
-          else
-            priceOz = parseFloat(parseFloat(priceOz * 1.003).toFixed(2));
+          // if (placeType == 'sell')
+          //   priceOz = parseFloat(parseFloat(priceOz * 0.997).toFixed(2));
+          // else
+          //   priceOz = parseFloat(parseFloat(priceOz * 1.003).toFixed(2));
           const stonexTotal = parseFloat(
             parseFloat(amountOz * priceOz).toFixed(4)
           );

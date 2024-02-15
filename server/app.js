@@ -136,15 +136,16 @@ async function updateStonexRate() {
     if (Object.entries(rates).length != 0) {
       const bidOunce = parseFloat(rates[0].bid[0]);
       const askOunce = parseFloat(rates[0].offer[0]);
-      const bidGm = (bidOunce / ounceConversion) * 0.998;
-      const askGm = (askOunce / ounceConversion) * 1.002;
+      const bidGm = (bidOunce / ounceConversion) * 0.999;
+      const askGm = (askOunce / ounceConversion) * 1.001;
       let query = {};
       query[`CGO-USDT`] = {
         bid: [parseFloat(parseFloat(bidGm).toFixed(6))],
         ask: [parseFloat(parseFloat(askGm).toFixed(6))],
       };
       query[`XAU-USD`] = {
-        bid: [bidOunce], ask: [askOunce]
+        bid: [bidOunce],
+        ask: [askOunce],
       };
       InternalBus.emit(GlobalEvents.converter_price, query);
       await RedisClient.set("priceUpdatedFromMarket", "true");
