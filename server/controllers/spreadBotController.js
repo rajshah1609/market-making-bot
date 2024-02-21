@@ -1281,7 +1281,14 @@ module.exports = {
         flags[`updateExternalExchangeOrders-SBC-time`] = new Date();
 
         const orders = await externalExchangeOrders.find({ status: "active" });
-        let i, order, orderId, orderData, status, avgPrice, avgPriceUsdt;
+        let i,
+          order,
+          orderId,
+          orderData,
+          status,
+          avgPrice,
+          avgPriceUsdt,
+          filledQty;
         if (orders.length > 0) {
           for (i = 0; i < orders.length; i++) {
             order = orders[i];
@@ -1294,15 +1301,18 @@ module.exports = {
             avgPriceUsdt = parseFloat(
               parseFloat(avgPrice / ounceConversion).toFixed(6)
             );
+            filledQty = parseFloat(orderData.cumQty);
             if (status == "FILLED") status = "completed";
             else if (status == "CANCELED") status = "cancelled";
             else status = "active";
             order.status = status;
             order.completedPrice = avgPrice;
             order.completedUsdtPrice = avgPriceUsdt;
+            order.filledQty = filledQty;
             order.markModified("status");
             order.markModified("completedPrice");
             order.markModified("completedUsdtPrice");
+            order.markModified("filledQty");
             order.save();
           }
         }
