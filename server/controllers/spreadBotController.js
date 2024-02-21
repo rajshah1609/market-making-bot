@@ -1301,7 +1301,7 @@ module.exports = {
             avgPriceUsdt = parseFloat(
               parseFloat(avgPrice / ounceConversion).toFixed(6)
             );
-            filledQty = parseFloat(orderData.cumQty);
+            filledQty = parseFloat(orderData[0].cumQty);
             if (status == "FILLED") status = "completed";
             else if (status == "CANCELED") status = "cancelled";
             else status = "active";
