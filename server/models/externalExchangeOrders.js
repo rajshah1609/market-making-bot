@@ -10,6 +10,8 @@ let externalExchangeOrders = new Schema(
     type: { type: String, required: true },
     price: { type: Number, required: true, default: 0 },
     usdtPrice: { type: Number, required: true, default: 0 },
+    completedPrice: { type: Number, default: 0 },
+    completedUsdtPrice: { type: Number, default: 0 },
     originalQtyGm: { type: Number, required: true, default: 0 },
     originalQty: { type: Number, required: true, default: 0 },
     filledQty: { type: Number, required: true, default: 0 },

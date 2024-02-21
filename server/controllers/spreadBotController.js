@@ -1118,6 +1118,15 @@ module.exports = {
         );
         if (difference > 3) flags[`placeExternalOrders-SBC`] = false;
       }
+      if (flags[`updateExternalExchangeOrders-SBC`]) {
+        lastUpdateTime = new Date(
+          flags[`updateExternalExchangeOrders-SBC-time`]
+        );
+        difference = parseFloat(
+          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0)
+        );
+        if (difference > 3) flags[`updateExternalExchangeOrders-SBC`] = false;
+      }
     } catch (error) {
       logger.error(`spreadBotController_resetFlags_error`, error);
     }
@@ -1262,6 +1271,49 @@ module.exports = {
       logger.error(`spreadBotController_placeExternalOrders_error`, error);
       flags[`placeExternalOrders-SBC`] = false;
       flags[`placeExternalOrders-SBC-time`] = new Date();
+    }
+  },
+
+  updateExternalExchangeOrders: async () => {
+    try {
+      if (!flags[`updateExternalExchangeOrders-SBC`]) {
+        flags[`updateExternalExchangeOrders-SBC`] = true;
+        flags[`updateExternalExchangeOrders-SBC-time`] = new Date();
+
+        const orders = await externalExchangeOrders.find({ status: "active" });
+        let i, order, orderId, orderData, status, avgPrice, avgPriceUsdt;
+        if (orders.length > 0) {
+          for (i = 0; i < orders.length; i++) {
+            order = orders[i];
+            orderId = order.orderId;
+            orderData = await stonex.orderStatus({ orderId });
+            status = orderData[0].status;
+            avgPrice = parseFloat(
+              parseFloat(orderData[0].averagePrice).toFixed(2)
+            );
+            avgPriceUsdt = parseFloat(
+              parseFloat(avgPrice / ounceConversion).toFixed(6)
+            );
+            if (status == "FILLED") status = "completed";
+            else if (status == "CANCELED") status = "cancelled";
+            else status = "active";
+            order.status = status;
+            order.completedPrice = avgPrice;
+            order.completedUsdtPrice = avgPriceUsdt;
+            order.markModified("status");
+            order.markModified("completedPrice");
+            order.markModified("completedUsdtPrice");
+            order.save();
+          }
+        }
+
+        flags[`updateExternalExchangeOrders-SBC`] = false;
+        flags[`updateExternalExchangeOrders-SBC-time`] = new Date();
+      }
+    } catch (error) {
+      logger.error(`updateExternalExchangeOrders_error`, error);
+      flags[`updateExternalExchangeOrders-SBC`] = false;
+      flags[`updateExternalExchangeOrders-SBC-time`] = new Date();
     }
   },
 

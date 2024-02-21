@@ -23,6 +23,7 @@ new CronJob(
     await spreadBotController.updateOrdersMin();
     await spreadBotController.cancelExtraOrders();
     await spreadBotController.placeExternalOrders();
+    await spreadBotController.updateExternalExchangeOrders();
     // await spreadBotController.placeFailedOrders();
     // await spreadBotController.checkOrderNumbers();
   },
