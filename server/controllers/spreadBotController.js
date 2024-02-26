@@ -1215,7 +1215,7 @@ module.exports = {
             ).toFixed(6)
           );
           amountOz = parseFloat(
-            parseFloat(totalQty / ounceConversion).toFixed(2)
+            parseFloat(totalQty / ounceConversion).toFixed(3)
           );
           priceOz = parseFloat(parseFloat(price * ounceConversion).toFixed(2));
           // if (placeType == 'sell')
