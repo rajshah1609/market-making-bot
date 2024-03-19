@@ -102,10 +102,10 @@ module.exports = {
               if (Object.entries(cgoData).length != 0) {
                 const lastPrice = cgoData.lastPrice;
                 const upperLimit = parseFloat(
-                  parseFloat(lastPrice * 1.002).toFixed(6)
+                  parseFloat(lastPrice * 1.001).toFixed(6)
                 );
                 const lowerLimit = parseFloat(
-                  parseFloat(lastPrice * 0.998).toFixed(6)
+                  parseFloat(lastPrice * 0.999).toFixed(6)
                 );
                 console.log(
                   "prices",
