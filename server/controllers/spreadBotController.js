@@ -1164,108 +1164,136 @@ module.exports = {
 
   placeExternalOrders: async () => {
     try {
-      if (!flags["placeExternalOrders-SBC"]) {
-        flags[`placeExternalOrders-SBC`] = true;
-        flags[`placeExternalOrders-SBC-time`] = new Date();
+      if (await module.exports.checkMarket) {
+        if (!flags["placeExternalOrders-SBC"]) {
+          flags[`placeExternalOrders-SBC`] = true;
+          flags[`placeExternalOrders-SBC-time`] = new Date();
 
-        const orders = await spreadBotOrders.find({
-          status: { $ne: "active" },
-          externalExchangeId: "pending",
-          filledQty: { $gt: 0 },
-        });
-        if (orders.length > 0) {
-          let i,
-            order,
-            totalQty = 0,
-            total = 0,
-            placeType,
-            price,
-            usdtPrice,
-            type,
-            amount,
-            usdtTotal,
-            refOrders = [],
-            amountOz,
-            priceOz,
-            pair = "CGO-USDT",
-            orderId,
-            stonexPair = stonexPairs[pair];
-          for (i = 0; i < orders.length; i++) {
-            order = orders[i];
-            type = order.type;
-            amount = order.filledQty;
-            usdtTotal = order.updatedUsdtTotal;
-            refOrders.push(order.uniqueId);
-            if (type == "buy") {
-              totalQty = totalQty + amount;
-              total = total - usdtTotal;
+          const orders = await spreadBotOrders.find({
+            status: { $ne: "active" },
+            externalExchangeId: "pending",
+            filledQty: { $gt: 0 },
+          });
+          if (orders.length > 0) {
+            let i,
+              order,
+              totalQty = 0,
+              total = 0,
+              placeType,
+              price,
+              usdtPrice,
+              calculatedPrice,
+              calculatedUsdtPrice,
+              type,
+              amount,
+              usdtTotal,
+              refOrders = [],
+              amountOz,
+              priceOz,
+              pair = "CGO-USDT",
+              orderId,
+              stonexPair = stonexPairs[pair],
+              marketPrice;
+            for (i = 0; i < orders.length; i++) {
+              order = orders[i];
+              type = order.type;
+              amount = order.filledQty;
+              usdtTotal = order.updatedUsdtTotal;
+              refOrders.push(order.uniqueId);
+              if (type == "buy") {
+                totalQty = totalQty + amount;
+                total = total - usdtTotal;
+              } else {
+                totalQty = totalQty - amount;
+                total = total + usdtTotal;
+              }
+            }
+            placeType = totalQty > 0 ? "sell" : "buy";
+            totalQty = Math.abs(totalQty);
+            total = Math.abs(total);
+            usdtPrice = parseFloat(parseFloat(total / totalQty).toFixed(6));
+            const converter = JSON.parse(
+              await RedisClient.get("converterPrice")
+            );
+            price = parseFloat(
+              parseFloat(
+                usdtPrice / converter[getSecondaryPair(pair)].bid[0]
+              ).toFixed(6)
+            );
+            amountOz = parseFloat(
+              parseFloat(totalQty / ounceConversion).toFixed(3)
+            );
+            priceOz = parseFloat(
+              parseFloat(price * ounceConversion).toFixed(2)
+            );
+            // if (placeType == 'sell')
+            //   priceOz = parseFloat(parseFloat(priceOz * 0.997).toFixed(2));
+            // else
+            //   priceOz = parseFloat(parseFloat(priceOz * 1.003).toFixed(2));
+            const stonexTotal = parseFloat(
+              parseFloat(amountOz * priceOz).toFixed(4)
+            );
+            const stonexUsdtTotal = parseFloat(
+              parseFloat(totalQty * usdtPrice).toFixed(4)
+            );
+            calculatedPrice = priceOz;
+            calculatedUsdtPrice = usdtPrice;
+            if (placeType == "buy") {
+              marketPrice = converter[`XAU-USD`].ask[0];
+              priceOz =
+                marketPrice <= calculatedPrice ? marketPrice : calculatedPrice;
+              usdtPrice =
+                parseFloat(priceOz / ounceConversion) *
+                converter[getSecondaryPair(`XAU-USD`)].ask[0];
             } else {
-              totalQty = totalQty - amount;
-              total = total + usdtTotal;
+              marketPrice = converter[`XAU-USD`].bid[0];
+              priceOz =
+                marketPrice >= calculatedPrice ? marketPrice : calculatedPrice;
+              usdtPrice =
+                parseFloat(priceOz / ounceConversion) *
+                converter[getSecondaryPair(`XAU-USD`)].bid[0];
+            }
+            const uniqueId = uuid();
+            const orderData = {
+              clientId: uniqueId,
+              pair: stonexPair,
+              type: placeType,
+              amount: amountOz,
+              price: priceOz,
+            };
+            const orderReturn = await stonex.placeOrder(orderData);
+            if (orderReturn != "error") orderId = orderReturn.orderId;
+            else orderId = "error";
+            if (orderId != "error") {
+              const newOrder = new externalExchangeOrders({
+                uniqueId,
+                exchange: "stonex",
+                pair,
+                exchangePair: stonexPair,
+                type: placeType,
+                price: priceOz,
+                usdtPrice,
+                calculatedPrice,
+                calculatedUsdtPrice,
+                originalQtyGm: totalQty,
+                originalQty: amountOz,
+                total: stonexTotal,
+                usdtTotal: stonexUsdtTotal,
+                orderId,
+                mappedOrders: refOrders,
+                status: "active",
+              });
+              await newOrder.save();
+              await spreadBotOrders.updateMany(
+                { uniqueId: { $in: refOrders } },
+                { externalExchangeId: uniqueId },
+                { multi: true }
+              );
             }
           }
-          placeType = totalQty > 0 ? "sell" : "buy";
-          totalQty = Math.abs(totalQty);
-          total = Math.abs(total);
-          usdtPrice = parseFloat(parseFloat(total / totalQty).toFixed(6));
-          const converter = JSON.parse(await RedisClient.get("converterPrice"));
-          price = parseFloat(
-            parseFloat(
-              usdtPrice / converter[getSecondaryPair(pair)].bid[0]
-            ).toFixed(6)
-          );
-          amountOz = parseFloat(
-            parseFloat(totalQty / ounceConversion).toFixed(3)
-          );
-          priceOz = parseFloat(parseFloat(price * ounceConversion).toFixed(2));
-          // if (placeType == 'sell')
-          //   priceOz = parseFloat(parseFloat(priceOz * 0.997).toFixed(2));
-          // else
-          //   priceOz = parseFloat(parseFloat(priceOz * 1.003).toFixed(2));
-          const stonexTotal = parseFloat(
-            parseFloat(amountOz * priceOz).toFixed(4)
-          );
-          const stonexUsdtTotal = parseFloat(
-            parseFloat(totalQty * usdtPrice).toFixed(4)
-          );
-          const uniqueId = uuid();
-          const orderData = {
-            clientId: uniqueId,
-            pair: stonexPair,
-            type: placeType,
-            amount: amountOz,
-            price: priceOz,
-          };
-          const orderReturn = await stonex.placeOrder(orderData);
-          if (orderReturn != "error") orderId = orderReturn.orderId;
-          else orderId = "error";
-          if (orderId != "error") {
-            const newOrder = new externalExchangeOrders({
-              uniqueId,
-              exchange: "stonex",
-              pair,
-              exchangePair: stonexPair,
-              type: placeType,
-              price: priceOz,
-              usdtPrice,
-              originalQtyGm: totalQty,
-              originalQty: amountOz,
-              total: stonexTotal,
-              usdtTotal: stonexUsdtTotal,
-              orderId,
-              mappedOrders: refOrders,
-              status: "active",
-            });
-            await newOrder.save();
-            await spreadBotOrders.updateMany(
-              { uniqueId: { $in: refOrders } },
-              { externalExchangeId: uniqueId },
-              { multi: true }
-            );
-          }
+          flags[`placeExternalOrders-SBC`] = false;
+          flags[`placeExternalOrders-SBC-time`] = new Date();
         }
-        flags[`placeExternalOrders-SBC`] = false;
-        flags[`placeExternalOrders-SBC-time`] = new Date();
       }
     } catch (error) {
       logger.error(`spreadBotController_placeExternalOrders_error`, error);
