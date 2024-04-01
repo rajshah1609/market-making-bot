@@ -216,6 +216,9 @@ module.exports = {
                   openOrders.push(uniqueId);
                 }
                 arbitrageData.cgoData.generatedMarketClosedOrders = true;
+                arbitrageData.cgoData.lastPrice = cgoData.lastPrice;
+                arbitrageData.cgoData.bidPrice = cgoData.bidPrice;
+                arbitrageData.cgoData.askPrice = cgoData.askPrice;
                 arbitrageData.markModified("cgoData");
               }
             }
@@ -1164,7 +1167,8 @@ module.exports = {
 
   placeExternalOrders: async () => {
     try {
-      if (await module.exports.checkMarket) {
+      const isMarketOpen = await module.exports.checkMarket();
+      if (isMarketOpen) {
         if (!flags["placeExternalOrders-SBC"]) {
           flags[`placeExternalOrders-SBC`] = true;
           flags[`placeExternalOrders-SBC-time`] = new Date();
@@ -1304,49 +1308,52 @@ module.exports = {
 
   updateExternalExchangeOrders: async () => {
     try {
-      if (!flags[`updateExternalExchangeOrders-SBC`]) {
-        flags[`updateExternalExchangeOrders-SBC`] = true;
-        flags[`updateExternalExchangeOrders-SBC-time`] = new Date();
+      const isMarketOpen = await module.exports.checkMarket();
+      if (isMarketOpen) {
+        if (!flags[`updateExternalExchangeOrders-SBC`]) {
+          flags[`updateExternalExchangeOrders-SBC`] = true;
+          flags[`updateExternalExchangeOrders-SBC-time`] = new Date();
 
-        const orders = await externalExchangeOrders.find({ status: "active" });
-        let i,
-          order,
-          orderId,
-          orderData,
-          status,
-          avgPrice,
-          avgPriceUsdt,
-          filledQty;
-        if (orders.length > 0) {
-          for (i = 0; i < orders.length; i++) {
-            order = orders[i];
-            orderId = order.orderId;
-            orderData = await stonex.orderStatus({ orderId });
-            status = orderData[0].status;
-            avgPrice = parseFloat(
-              parseFloat(orderData[0].averagePrice).toFixed(2)
-            );
-            avgPriceUsdt = parseFloat(
-              parseFloat(avgPrice / ounceConversion).toFixed(6)
-            );
-            filledQty = parseFloat(orderData[0].cumQty);
-            if (status == "FILLED") status = "completed";
-            else if (status == "CANCELED") status = "cancelled";
-            else status = "active";
-            order.status = status;
-            order.completedPrice = avgPrice;
-            order.completedUsdtPrice = avgPriceUsdt;
-            order.filledQty = filledQty;
-            order.markModified("status");
-            order.markModified("completedPrice");
-            order.markModified("completedUsdtPrice");
-            order.markModified("filledQty");
-            order.save();
+          const orders = await externalExchangeOrders.find({ status: "active" });
+          let i,
+            order,
+            orderId,
+            orderData,
+            status,
+            avgPrice,
+            avgPriceUsdt,
+            filledQty;
+          if (orders.length > 0) {
+            for (i = 0; i < orders.length; i++) {
+              order = orders[i];
+              orderId = order.orderId;
+              orderData = await stonex.orderStatus({ orderId });
+              status = orderData[0].status;
+              avgPrice = parseFloat(
+                parseFloat(orderData[0].averagePrice).toFixed(2)
+              );
+              avgPriceUsdt = parseFloat(
+                parseFloat(avgPrice / ounceConversion).toFixed(6)
+              );
+              filledQty = parseFloat(orderData[0].cumQty);
+              if (status == "FILLED") status = "completed";
+              else if (status == "CANCELED") status = "cancelled";
+              else status = "active";
+              order.status = status;
+              order.completedPrice = avgPrice;
+              order.completedUsdtPrice = avgPriceUsdt;
+              order.filledQty = filledQty;
+              order.markModified("status");
+              order.markModified("completedPrice");
+              order.markModified("completedUsdtPrice");
+              order.markModified("filledQty");
+              order.save();
+            }
           }
-        }
 
-        flags[`updateExternalExchangeOrders-SBC`] = false;
-        flags[`updateExternalExchangeOrders-SBC-time`] = new Date();
+          flags[`updateExternalExchangeOrders-SBC`] = false;
+          flags[`updateExternalExchangeOrders-SBC-time`] = new Date();
+        }
       }
     } catch (error) {
       logger.error(`updateExternalExchangeOrders_error`, error);
