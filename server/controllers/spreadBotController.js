@@ -121,7 +121,7 @@ module.exports = {
               if (generateOrder) {
                 for (i = 1; i <= 10; i++) {
                   usdtPrice = parseFloat(
-                    parseFloat(askPrice * (1 + 0.002 * i)).toFixed(6)
+                    parseFloat(baseUsdtPrice * (1 + i * 0.002)).toFixed(6)
                   );
                   uniqueId = uuid();
                   newOrder = new spreadBotGeneratedOrders({
@@ -139,7 +139,7 @@ module.exports = {
                   newOrder.save();
                   openOrders.push(uniqueId);
                   usdtPrice = parseFloat(
-                    parseFloat(bidPrice * (1 - 0.002 * i)).toFixed(6)
+                    parseFloat(baseUsdtPrice * (1 - i * 0.002)).toFixed(6)
                   );
                   uniqueId = uuid();
                   newOrder = new spreadBotGeneratedOrders({
