@@ -1227,72 +1227,74 @@ module.exports = {
             amountOz = parseFloat(
               parseFloat(totalQty / ounceConversion).toFixed(3)
             );
-            priceOz = parseFloat(
-              parseFloat(price * ounceConversion).toFixed(2)
-            );
-            // if (placeType == 'sell')
-            //   priceOz = parseFloat(parseFloat(priceOz * 0.997).toFixed(2));
-            // else
-            //   priceOz = parseFloat(parseFloat(priceOz * 1.003).toFixed(2));
-            const stonexTotal = parseFloat(
-              parseFloat(amountOz * priceOz).toFixed(4)
-            );
-            const stonexUsdtTotal = parseFloat(
-              parseFloat(totalQty * usdtPrice).toFixed(4)
-            );
-            calculatedPrice = priceOz;
-            calculatedUsdtPrice = usdtPrice;
-            if (placeType == "buy") {
-              marketPrice = converter[`XAU-USD`].ask[0];
-              priceOz =
-                marketPrice <= calculatedPrice ? marketPrice : calculatedPrice;
-              usdtPrice =
-                parseFloat(priceOz / ounceConversion) *
-                converter[getSecondaryPair(`XAU-USD`)].ask[0];
-            } else {
-              marketPrice = converter[`XAU-USD`].bid[0];
-              priceOz =
-                marketPrice >= calculatedPrice ? marketPrice : calculatedPrice;
-              usdtPrice =
-                parseFloat(priceOz / ounceConversion) *
-                converter[getSecondaryPair(`XAU-USD`)].bid[0];
-            }
-            const uniqueId = uuid();
-            const orderData = {
-              clientId: uniqueId,
-              pair: stonexPair,
-              type: placeType,
-              amount: amountOz,
-              price: priceOz,
-            };
-            const orderReturn = await stonex.placeOrder(orderData);
-            if (orderReturn != "error") orderId = orderReturn.orderId;
-            else orderId = "error";
-            if (orderId != "error") {
-              const newOrder = new externalExchangeOrders({
-                uniqueId,
-                exchange: "stonex",
-                pair,
-                exchangePair: stonexPair,
-                type: placeType,
-                price: priceOz,
-                usdtPrice,
-                calculatedPrice,
-                calculatedUsdtPrice,
-                originalQtyGm: totalQty,
-                originalQty: amountOz,
-                total: stonexTotal,
-                usdtTotal: stonexUsdtTotal,
-                orderId,
-                mappedOrders: refOrders,
-                status: "active",
-              });
-              await newOrder.save();
-              await spreadBotOrders.updateMany(
-                { uniqueId: { $in: refOrders } },
-                { externalExchangeId: uniqueId },
-                { multi: true }
+            if (amountOz > 0) {
+              priceOz = parseFloat(
+                parseFloat(price * ounceConversion).toFixed(2)
               );
+              // if (placeType == 'sell')
+              //   priceOz = parseFloat(parseFloat(priceOz * 0.997).toFixed(2));
+              // else
+              //   priceOz = parseFloat(parseFloat(priceOz * 1.003).toFixed(2));
+              const stonexTotal = parseFloat(
+                parseFloat(amountOz * priceOz).toFixed(4)
+              );
+              const stonexUsdtTotal = parseFloat(
+                parseFloat(totalQty * usdtPrice).toFixed(4)
+              );
+              calculatedPrice = priceOz;
+              calculatedUsdtPrice = usdtPrice;
+              if (placeType == "buy") {
+                marketPrice = parseFloat(parseFloat(converter[`XAU-USD`].ask[0] * 1.0002).toFixed(2));
+                priceOz =
+                  marketPrice <= calculatedPrice ? marketPrice : calculatedPrice;
+                usdtPrice =
+                  parseFloat(parseFloat(parseFloat(priceOz / ounceConversion) *
+                    converter[getSecondaryPair(`XAU-USD`)].ask[0]).toFixed(6));
+              } else {
+                marketPrice = parseFloat(parseFloat(converter[`XAU-USD`].bid[0] * 0.9998).toFixed(2));
+                priceOz =
+                  marketPrice >= calculatedPrice ? marketPrice : calculatedPrice;
+                usdtPrice =
+                  parseFloat(parseFloat(parseFloat(priceOz / ounceConversion) *
+                    converter[getSecondaryPair(`XAU-USD`)].bid[0]).toFixed(6));
+              }
+              const uniqueId = uuid();
+              const orderData = {
+                clientId: uniqueId,
+                pair: stonexPair,
+                type: placeType,
+                amount: amountOz,
+                price: priceOz,
+              };
+              const orderReturn = await stonex.placeOrder(orderData);
+              if (orderReturn != "error") orderId = orderReturn.orderId;
+              else orderId = "error";
+              if (orderId != "error") {
+                const newOrder = new externalExchangeOrders({
+                  uniqueId,
+                  exchange: "stonex",
+                  pair,
+                  exchangePair: stonexPair,
+                  type: placeType,
+                  price: priceOz,
+                  usdtPrice,
+                  calculatedPrice,
+                  calculatedUsdtPrice,
+                  originalQtyGm: totalQty,
+                  originalQty: amountOz,
+                  total: stonexTotal,
+                  usdtTotal: stonexUsdtTotal,
+                  orderId,
+                  mappedOrders: refOrders,
+                  status: "active",
+                });
+                await newOrder.save();
+                await spreadBotOrders.updateMany(
+                  { uniqueId: { $in: refOrders } },
+                  { externalExchangeId: uniqueId },
+                  { multi: true }
+                );
+              }
             }
           }
           flags[`placeExternalOrders-SBC`] = false;
