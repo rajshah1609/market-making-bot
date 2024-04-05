@@ -15,6 +15,7 @@ const {
   getSecondaryPair,
   parseCompleteOrderBook,
 } = require("../services/redis");
+const commonHelper = require("../helpers/commonHelper");
 // const { getTotalFees } = require("../helpers/commonHelper");
 let startDate = new Date(Date.UTC(2021, 7, 2, 2, 30, 0, 0));
 
@@ -350,448 +351,233 @@ module.exports = {
     }
   },
 
-  // sendStatsMail: async () => {
-  //   try {
-  //     let i,
-  //       j,
-  //       k,
-  //       l,
-  //       stats,
-  //       exchange,
-  //       account,
-  //       rowData,
-  //       totalUSDTDifference = 0,
-  //       startData,
-  //       currentData,
-  //       txData,
-  //       adjustment = [],
-  //       opening,
-  //       closing,
-  //       accountsArray = [],
-  //       buySell,
-  //       totalUSDTOpen = 0,
-  //       totalUSDTCloseAct = 0,
-  //       totalUSDTCloseCal = 0,
-  //       totalUSDTBS = 0,
-  //       totalUSDTDW = 0,
-  //       pendingTotal = 0,
-  //       pendingTotalArray = [];
-  //     const converter = JSON.parse(await RedisClient.get("converterPrice"));
-  //     let time = new Date();
-  //     time.setUTCHours(2, 30, 0, 0);
-  //     let yesterday = new Date(time);
-  //     yesterday.setDate(yesterday.getDate() - 1);
-  //     const statsData = await dailyStats.find({ time });
-  //     const feesData = await commonHelper.getFees(yesterday, time);
-  //     let workbook = new excel.Workbook();
+  sendStatsMail: async () => {
+    try {
+      let i,
+        j,
+        k,
+        l,
+        stats,
+        exchange,
+        account,
+        rowData,
+        totalUSDTDifference = 0,
+        startData,
+        currentData,
+        txData,
+        adjustment = [],
+        opening,
+        closing,
+        accountsArray = [],
+        buySell,
+        totalUSDTOpen = 0,
+        totalUSDTCloseAct = 0,
+        totalUSDTCloseCal = 0,
+        totalUSDTBS = 0,
+        totalUSDTDW = 0,
+        pendingTotal = 0,
+        pendingTotalArray = [],
+        currency,
+        totalAmount,
+        usdtTotal,
+        ordersData,
+        type,
+        usdtPrice;
+      const converter = JSON.parse(await RedisClient.get("converterPrice"));
+      let time = new Date();
+      time.setUTCHours(2, 30, 0, 0);
+      let yesterday = new Date(time);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const statsData = await dailyStats.find({ time });
+      const feesData = await commonHelper.getFees(yesterday, time);
+      let workbook = new excel.Workbook();
 
-  //     workbook.views = [
-  //       {
-  //         x: 0,
-  //         y: 0,
-  //         width: 10000,
-  //         height: 20000,
-  //         firstSheet: 0,
-  //         activeTab: 1,
-  //         visibility: "visible",
-  //       },
-  //     ];
-  //     let worksheet = workbook.addWorksheet("Sheet 1");
-  //     worksheet.columns = [
-  //       {
-  //         header: "Exchange",
-  //         key: "exchange",
-  //       },
-  //       {
-  //         header: "Account",
-  //         key: "account",
-  //       },
-  //       {
-  //         header: "Currency",
-  //         key: "currency",
-  //       },
-  //       {
-  //         header: "Yesterday",
-  //         key: "yesterday",
-  //       },
-  //       {
-  //         header: "Today",
-  //         key: "today",
-  //       },
-  //       {
-  //         header: "Difference",
-  //         key: "difference",
-  //       },
-  //       {
-  //         header: "Difference (USDT)",
-  //         key: "differenceUSDT",
-  //       },
-  //       {
-  //         header: "Fees",
-  //         key: "fees",
-  //       },
-  //       {
-  //         header: "Fees (USDT)",
-  //         key: "feesUSDT",
-  //       },
-  //     ];
-  //     worksheet.addRow();
-  //     for (i = 0; i < statsData.length; i++) {
-  //       exchange = statsData[i].exchange;
-  //       account = statsData[i].account;
-  //       stats = statsData[i].stats;
-  //       for (j = 0; j < stats.length; j++) {
-  //         rowData = {
-  //           exchange,
-  //           account,
-  //           currency: stats[j].currency,
-  //           yesterday: stats[j].yesterdayBalance,
-  //           today: stats[j].todayBalance,
-  //           difference: stats[j].balanceChange,
-  //           differenceUSDT: stats[j].diffUSDT,
-  //           fees: 0,
-  //           feesUSDT: 0,
-  //         };
-  //         if (exchange == "total") {
-  //           for (k = 0; k < feesData.length; k++) {
-  //             if (feesData[k].currency == stats[j].currency) {
-  //               rowData.fees = feesData[k].fees;
-  //               rowData.feesUSDT = feesData[k].USDValue;
-  //             }
-  //           }
-  //           totalUSDTDifference += rowData.differenceUSDT;
-  //         }
-  //         worksheet.addRow(rowData);
-  //       }
-  //       worksheet.addRow();
-  //     }
+      workbook.views = [
+        {
+          x: 0,
+          y: 0,
+          width: 10000,
+          height: 20000,
+          firstSheet: 0,
+          activeTab: 1,
+          visibility: "visible",
+        },
+      ];
+      let worksheet = workbook.addWorksheet("Sheet 1");
+      worksheet.columns = [
+        {
+          header: "Exchange",
+          key: "exchange",
+        },
+        {
+          header: "Account",
+          key: "account",
+        },
+        {
+          header: "Currency",
+          key: "currency",
+        },
+        {
+          header: "Yesterday",
+          key: "yesterday",
+        },
+        {
+          header: "Today",
+          key: "today",
+        },
+        {
+          header: "Difference",
+          key: "difference",
+        },
+        {
+          header: "Difference (USDT)",
+          key: "differenceUSDT",
+        },
+        {
+          header: "Fees",
+          key: "fees",
+        },
+        {
+          header: "Fees (USDT)",
+          key: "feesUSDT",
+        },
+      ];
+      worksheet.addRow();
+      for (i = 0; i < statsData.length; i++) {
+        exchange = statsData[i].exchange;
+        account = statsData[i].account;
+        stats = statsData[i].stats;
+        for (j = 0; j < stats.length; j++) {
+          rowData = {
+            exchange,
+            account,
+            currency: stats[j].currency,
+            yesterday: stats[j].yesterdayBalance,
+            today: stats[j].todayBalance,
+            difference: stats[j].balanceChange,
+            differenceUSDT: stats[j].diffUSDT,
+            fees: 0,
+            feesUSDT: 0,
+          };
+          if (exchange == "total") {
+            for (k = 0; k < feesData.length; k++) {
+              if (feesData[k].currency == stats[j].currency) {
+                rowData.fees = feesData[k].fees;
+                rowData.feesUSDT = feesData[k].USDValue;
+              }
+            }
+            totalUSDTDifference += rowData.differenceUSDT;
+          }
+          worksheet.addRow(rowData);
+        }
+        worksheet.addRow();
+      }
 
-  //     rowData = {
-  //       exchange: "Total Difference(USDT)",
-  //       account: "",
-  //       currency: "USDT",
-  //       yesterday: 0,
-  //       today: 0,
-  //       difference: 0,
-  //       differenceUSDT: totalUSDTDifference,
-  //       fees: 0,
-  //       feesUSDT: 0,
-  //     };
-  //     worksheet.addRow(rowData);
-  //     worksheet.addRow();
-  //     worksheet.addRow();
+      rowData = {
+        exchange: "Total Difference(USDT)",
+        account: "",
+        currency: "USDT",
+        yesterday: 0,
+        today: 0,
+        difference: 0,
+        differenceUSDT: totalUSDTDifference,
+        fees: 0,
+        feesUSDT: 0,
+      };
+      worksheet.addRow(rowData);
+      worksheet.addRow();
+      worksheet.addRow();
 
-  //     let worksheet1 = workbook.addWorksheet("Sheet 2");
-  //     worksheet1.columns = [
-  //       {
-  //         header: "Exchange",
-  //         key: "exchange",
-  //       },
-  //       {
-  //         header: "Account",
-  //         key: "account",
-  //       },
-  //       {
-  //         header: "Currency",
-  //         key: "currency",
-  //       },
-  //       {
-  //         header: "Balance(1st May)",
-  //         key: "opening",
-  //       },
-  //       {
-  //         header: "Buy/Sell",
-  //         key: "buy_sell",
-  //       },
-  //       {
-  //         header: "Deposits/Withdrawal",
-  //         key: "dep_with",
-  //       },
-  //       {
-  //         header: "Closing Balance(Actual)",
-  //         key: "closingAc",
-  //       },
-  //       {
-  //         header: "Closing Balance(Calculated)",
-  //         key: "closingCal",
-  //       },
-  //       {
-  //         header: "Difference",
-  //         key: "difference",
-  //       },
-  //       {
-  //         header: "Rate",
-  //         key: "rate",
-  //       },
-  //       {
-  //         header: "Pending Buy/Sell",
-  //         key: "pend_buy_sell",
-  //       },
-  //     ];
-  //     worksheet1.addRow();
+      let worksheet2 = workbook.addWorksheet("Sheet 2");
+      worksheet2.columns = [
+        {
+          header: "Currency",
+          key: "currency",
+        },
+        {
+          header: "Amount",
+          key: "amount",
+        },
+        {
+          header: "Type",
+          key: "type",
+        },
+        { header: "USDT Total", key: "usdtTotal" },
+        { header: "Average price", key: "avgPrice" },
+      ];
+      worksheet2.addRow();
+      const currenciesSB = ["CGO"];
+      for (i = 0; i < currenciesSB.length; i++) {
+        currency = currenciesSB[i];
+        totalAmount = 0;
+        usdtTotal = 0;
+        ordersData = await spreadBotOrders.find({
+          pair: { $regex: new RegExp(`${currency}-`) },
+          filledQty: { $gt: 0 },
+          $and: [
+            { updatedAt: { $lte: time } },
+            { updatedAt: { $gte: yesterday } },
+          ],
+        });
+        if (ordersData.length > 0) {
+          for (j = 0; j < ordersData.length; j++) {
+            type = ordersData[j].type;
+            if (type == "buy") {
+              totalAmount = totalAmount + ordersData[j].filledQty;
+              usdtTotal = usdtTotal - ordersData[j].updatedUsdtTotal;
+            } else {
+              totalAmount = totalAmount - ordersData[j].filledQty;
+              usdtTotal = usdtTotal + ordersData[j].updatedUsdtTotal;
+            }
+          }
+          if (totalAmount > 0) type = "Bought";
+          else type = "Sold";
+          totalAmount = Math.abs(totalAmount);
+          usdtTotal = Math.abs(usdtTotal);
+          usdtPrice = parseFloat(
+            parseFloat(usdtTotal / totalAmount).toFixed(8)
+          );
+          rowData = {
+            currency,
+            amount: totalAmount,
+            type,
+            usdtTotal,
+            avgPrice: usdtPrice,
+          };
+          worksheet2.addRow(rowData);
+        }
+      }
 
-  //     const exchangeCurrencies = await ExchangeCurrencies.find({});
-  //     for (i = 0; i < exchangeCurrencies.length; i++) {
-  //       exchange = exchangeCurrencies[i].exchange;
-  //       accountsArray = [];
-  //       startData = await dailyWalletBalances.find({
-  //         exchange: exchange,
-  //         time: startDate,
-  //       });
-  //       if (startData.length > 0) {
-  //         for (j = 0; j < startData.length; j++) {
-  //           if (!accountsArray.includes(startData[j].account)) {
-  //             accountsArray.push(startData[j].account);
-  //           }
-  //         }
-  //       }
-  //       currentData = await dailyWalletBalances.find({
-  //         exchange: exchange,
-  //         time: time,
-  //       });
-  //       if (currentData.length > 0) {
-  //         for (j = 0; j < currentData.length; j++) {
-  //           if (!accountsArray.includes(currentData[j].account)) {
-  //             accountsArray.push(currentData[j].account);
-  //           }
-  //         }
-  //       }
-  //       for (j = 0; j < accountsArray.length; j++) {
-  //         startData = await dailyWalletBalances.findOne({
-  //           exchange: exchange,
-  //           time: startDate,
-  //           account: accountsArray[j],
-  //         });
-  //         txData = await walletSnapshotController.getAdjustmentsEA(
-  //           startDate,
-  //           time,
-  //           exchange,
-  //           accountsArray[j]
-  //         );
-  //         adjustment = [];
-  //         for (k = 0; k < txData.length; k++) {
-  //           if (!(txData[k].currency in adjustment)) {
-  //             adjustment[txData[k].currency] = 0;
-  //           }
-  //           if (txData[k].type == "withdraw") {
-  //             adjustment[txData[k].currency] =
-  //               adjustment[txData[k].currency] - txData[k].amount;
-  //           } else {
-  //             adjustment[txData[k].currency] =
-  //               adjustment[txData[k].currency] + txData[k].amount;
-  //           }
-  //         }
-  //         currentData = await dailyWalletBalances.findOne({
-  //           exchange: exchange,
-  //           time: time,
-  //           account: accountsArray[j],
-  //         });
-  //         for (k = 0; k < exchangeCurrencies[i].currency.length; k++) {
-  //           // if (
-  //           //   !currencies.includes(exchangeCurrencies[i].currency[k].symbol)
-  //           // ) {
-  //           //   currencies.push(exchangeCurrencies[i].currency[k].symbol);
-  //           // }
-  //           if (currencies.includes(exchangeCurrencies[i].currency[k].symbol)) {
-  //             opening = 0;
-  //             closing = 0;
-  //             if (startData != "" && startData != null && startData.currency) {
-  //               for (l = 0; l < startData.currency.length; l++) {
-  //                 if (
-  //                   exchangeCurrencies[i].currency[k].symbol ==
-  //                   startData.currency[l].currency
-  //                 ) {
-  //                   opening = startData.currency[l].total;
-  //                 }
-  //               }
-  //             }
-  //             if (
-  //               currentData != "" &&
-  //               currentData != null &&
-  //               currentData.currency
-  //             ) {
-  //               for (l = 0; l < currentData.currency.length; l++) {
-  //                 if (
-  //                   exchangeCurrencies[i].currency[k].symbol ==
-  //                   currentData.currency[l].currency
-  //                 ) {
-  //                   closing = currentData.currency[l].total;
-  //                 }
-  //               }
-  //             }
-  //             buySell = await commonHelper.getCompletedOrdersSummary(
-  //               exchange,
-  //               accountsArray[j],
-  //               exchangeCurrencies[i].currency[k].symbol,
-  //               startDate,
-  //               time
-  //             );
-  //             pendingTotal = await commonHelper.getOpenOrdersSummary(
-  //               exchangeCurrencies[i].currency[k].symbol,
-  //               exchange,
-  //               accountsArray[j]
-  //             );
-  //             if (
-  //               !(exchangeCurrencies[i].currency[k].symbol in pendingTotalArray)
-  //             ) {
-  //               pendingTotalArray[exchangeCurrencies[i].currency[k].symbol] = 0;
-  //             }
-  //             pendingTotalArray[exchangeCurrencies[i].currency[k].symbol] =
-  //               pendingTotalArray[exchangeCurrencies[i].currency[k].symbol] +
-  //               pendingTotal;
-  //             rowData = {
-  //               exchange: exchange,
-  //               account: accountsArray[j],
-  //               currency: exchangeCurrencies[i].currency[k].symbol,
-  //               opening,
-  //               buy_sell: buySell,
-  //               dep_with:
-  //                 adjustment[exchangeCurrencies[i].currency[k].symbol] || 0,
-  //               closingAc: closing,
-  //               closingCal:
-  //                 opening +
-  //                 (adjustment[exchangeCurrencies[i].currency[k].symbol] || 0) +
-  //                 buySell,
-  //               difference:
-  //                 closing -
-  //                 (opening +
-  //                   (adjustment[exchangeCurrencies[i].currency[k].symbol] ||
-  //                     0) +
-  //                   buySell),
-  //               rate: converter[
-  //                 `${exchangeCurrencies[i].currency[k].symbol}-USDT`
-  //               ].bid[0],
-  //               pend_buy_sell: pendingTotal,
-  //             };
-  //             worksheet1.addRow(rowData);
-  //           }
-  //         }
-  //         worksheet1.addRow();
-  //       }
-  //       worksheet1.addRow();
-  //     }
-
-  //     worksheet1.addRow();
-  //     startData = await dailyWalletBalances.findOne({
-  //       exchange: "total",
-  //       time: startDate,
-  //     });
-  //     txData = await walletSnapshotController.getAdjustments(startDate, time);
-  //     adjustment = [];
-  //     for (k = 0; k < txData.length; k++) {
-  //       if (!(txData[k].currency in adjustment)) {
-  //         adjustment[txData[k].currency] = 0;
-  //       }
-  //       if (txData[k].type == "withdraw") {
-  //         adjustment[txData[k].currency] =
-  //           adjustment[txData[k].currency] - txData[k].amount;
-  //       } else {
-  //         adjustment[txData[k].currency] =
-  //           adjustment[txData[k].currency] + txData[k].amount;
-  //       }
-  //     }
-  //     currentData = await dailyWalletBalances.findOne({
-  //       exchange: "total",
-  //       time: time,
-  //     });
-  //     for (i = 0; i < currencies.length; i++) {
-  //       opening = 0;
-  //       closing = 0;
-  //       for (l = 0; l < startData.currency.length; l++) {
-  //         if (currencies[i] == startData.currency[l].currency) {
-  //           opening = startData.currency[l].total;
-  //         }
-  //       }
-  //       for (l = 0; l < currentData.currency.length; l++) {
-  //         if (currencies[i] == currentData.currency[l].currency) {
-  //           closing = currentData.currency[l].total;
-  //         }
-  //       }
-  //       buySell = await commonHelper.getAllCompletedOrdersSummary(
-  //         currencies[i],
-  //         startDate,
-  //         time
-  //       );
-  //       rowData = {
-  //         exchange: "total",
-  //         account: "total",
-  //         currency: currencies[i],
-  //         opening,
-  //         buy_sell: buySell,
-  //         dep_with: adjustment[currencies[i]] || 0,
-  //         closingAc: closing,
-  //         closingCal: opening + (adjustment[currencies[i]] || 0) + buySell,
-  //         difference:
-  //           closing - (opening + (adjustment[currencies[i]] || 0) + buySell),
-  //         rate: converter[`${currencies[i]}-USDT`].bid[0],
-  //         pend_buy_sell: pendingTotalArray[currencies[i]],
-  //       };
-  //       worksheet1.addRow(rowData);
-  //       if (fiatCurrencies.includes(currencies[i])) {
-  //         totalUSDTOpen =
-  //           totalUSDTOpen + opening * converter[`${currencies[i]}-USDT`].bid[0];
-  //         totalUSDTCloseAct =
-  //           totalUSDTCloseAct +
-  //           closing * converter[`${currencies[i]}-USDT`].bid[0];
-  //         totalUSDTCloseCal =
-  //           totalUSDTCloseCal +
-  //           (opening + (adjustment[currencies[i]] || 0) + buySell) *
-  //             converter[`${currencies[i]}-USDT`].bid[0];
-  //         totalUSDTBS =
-  //           totalUSDTBS + buySell * converter[`${currencies[i]}-USDT`].bid[0];
-  //         totalUSDTDW =
-  //           totalUSDTDW +
-  //           (adjustment[currencies[i]] || 0) *
-  //             converter[`${currencies[i]}-USDT`].bid[0];
-  //       }
-  //     }
-
-  //     worksheet1.addRow();
-
-  //     rowData = {
-  //       exchange: "Total Fiat",
-  //       account: "",
-  //       currency: "USDT",
-  //       opening: totalUSDTOpen,
-  //       buy_sell: totalUSDTBS,
-  //       dep_with: totalUSDTDW,
-  //       closingAc: totalUSDTCloseAct,
-  //       closingCal: totalUSDTCloseCal,
-  //       difference: totalUSDTCloseAct - totalUSDTCloseCal,
-  //       rate: 1,
-  //     };
-  //     worksheet1.addRow(rowData);
-
-  //     const filename =
-  //       time.getDate() +
-  //       "/" +
-  //       (time.getMonth() + 1) +
-  //       "/" +
-  //       time.getFullYear() +
-  //       "_balance_report.xlsx";
-  //     let tempfilePath = tempfile(".xlsx");
-  //     workbook.xlsx.writeFile(tempfilePath).then(async function () {
-  //       let attachments = [
-  //         {
-  //           filename: filename,
-  //           path: tempfilePath,
-  //         },
-  //       ];
-  //       const emails = await commonHelper.getEmailsForMail(1);
-  //       // const emails = ["raj@xinfin.org"];
-  //       await mail.send(
-  //         emails,
-  //         "Crypbot Daily Balance Summary Mail",
-  //         "Hello, \n Please find the attached excel sheet for the daily balance summary calculated at : " +
-  //           time,
-  //         attachments
-  //       );
-  //     });
-  //   } catch (error) {
-  //     logger.error(`cronController_sendStatsMail_error : `, error);
-  //     return "error";
-  //   }
-  // },
+      const filename =
+        time.getDate() +
+        "/" +
+        (time.getMonth() + 1) +
+        "/" +
+        time.getFullYear() +
+        "_balance_report.xlsx";
+      let tempfilePath = tempfile(".xlsx");
+      workbook.xlsx.writeFile(tempfilePath).then(async function () {
+        let attachments = [
+          {
+            filename: filename,
+            path: tempfilePath,
+          },
+        ];
+        const emails = await commonHelper.getEmailsForMail(1);
+        // const emails = ["raj@xinfin.org"];
+        await mail.send(
+          emails,
+          "Crypbot Daily Balance Summary Mail",
+          "Hello, \n Please find the attached excel sheet for the daily balance summary calculated at : " +
+            time,
+          attachments
+        );
+      });
+    } catch (error) {
+      logger.error(`cronController_sendStatsMail_error : `, error);
+      return "error";
+    }
+  },
 
   updatedCompletedOrdersStatus: async () => {
     try {

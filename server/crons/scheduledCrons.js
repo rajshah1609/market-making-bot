@@ -69,6 +69,8 @@ new CronJob(
   "0 8 * * *",
   async () => {
     await cronController.updateBalance("daily");
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    await cronController.sendStatsMail();
   },
   null,
   true,

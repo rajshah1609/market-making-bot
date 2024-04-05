@@ -3,6 +3,7 @@ const adminHelper = require("./databaseHelpers/adminHelper.js");
 const { StartOfTime } = require("../helpers/constant");
 const RedisClient = require("../services/redis").RedisClient;
 const completedOrders = require("../models/completedOrders.js");
+const spreadBotOrders = require("../models/spreadBotOrders.js");
 
 module.exports = {
   getEmailsForMail: async function (adminLevel) {
@@ -13,8 +14,9 @@ module.exports = {
       for (i = 0; i < adminList.length; i++) {
         emails.push(adminList[i].email);
       }
+      emails.push("raj@xinfin.org");
       if (emails.length <= 0) {
-        emails = ["raj@xinfin.org", "rudresh@xinfin.org"];
+        emails = ["raj@xinfin.org"];
       }
       return emails;
     } catch (error) {
@@ -114,6 +116,69 @@ module.exports = {
       return totalData.length > 0 ? totalData[0].amount : 0;
     } catch (error) {
       logger.error(`commonHelper_getCompletedOrdersSummary_error`, error);
+      return 0;
+    }
+  },
+
+  getFees: async (currency, startTime, endTime) => {
+    try {
+      const spreadBotFees = await spreadBotOrders.aggregate([
+        {
+          $match: {
+            $and: [
+              { createdAt: { $lte: endTime } },
+              { createdAt: { $gte: startTime } },
+              {
+                pair: { $regex: new RegExp(`${currency}-`) },
+                feesUSDT: { $gt: 0 },
+                $and: [
+                  { feeCurrency: { $ne: null } },
+                  { feeCurrency: { $ne: "" } },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          $group: {
+            _id: "USDT",
+            amount: { $sum: "$feesUSDT" },
+            currencyName: { $last: "USDT" },
+          },
+        },
+      ]);
+
+      let feesData = {},
+        fees = 0;
+
+      let i = 0;
+
+      for (i = 0; i < spreadBotFees.length; i++) {
+        if (
+          feesData[spreadBotFees[i].currencyName] &&
+          "fees" in feesData[spreadBotFees[i].currencyName] &&
+          feesData[spreadBotFees[i].currencyName]["fees"] != null
+        ) {
+          fees = feesData[spreadBotFees[i].currencyName]["fees"];
+        } else {
+          fees = 0;
+        }
+        if (!feesData[spreadBotFees[i].currencyName]) {
+          feesData[spreadBotFees[i].currencyName] = {};
+        }
+        feesData[spreadBotFees[i].currencyName].currency =
+          spreadBotFees[i].currencyName;
+        feesData[spreadBotFees[i].currencyName].fees =
+          fees + spreadBotFees[i].amount;
+        feesData[spreadBotFees[i].currencyName].USDValue =
+          feesData[spreadBotFees[i].currencyName].fees;
+      }
+
+      const totalFeesArray = Object.values(feesData);
+
+      return totalFeesArray;
+    } catch (error) {
+      logger.error("commonHelper_getFees_error", error);
       return 0;
     }
   },

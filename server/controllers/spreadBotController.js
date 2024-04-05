@@ -1244,19 +1244,33 @@ module.exports = {
               calculatedPrice = priceOz;
               calculatedUsdtPrice = usdtPrice;
               if (placeType == "buy") {
-                marketPrice = parseFloat(parseFloat(converter[`XAU-USD`].ask[0] * 1.0002).toFixed(2));
+                marketPrice = parseFloat(
+                  parseFloat(converter[`XAU-USD`].ask[0] * 1.0002).toFixed(2)
+                );
                 priceOz =
-                  marketPrice <= calculatedPrice ? marketPrice : calculatedPrice;
-                usdtPrice =
-                  parseFloat(parseFloat(parseFloat(priceOz / ounceConversion) *
-                    converter[getSecondaryPair(`XAU-USD`)].ask[0]).toFixed(6));
+                  marketPrice <= calculatedPrice
+                    ? marketPrice
+                    : calculatedPrice;
+                usdtPrice = parseFloat(
+                  parseFloat(
+                    parseFloat(priceOz / ounceConversion) *
+                      converter[getSecondaryPair(`XAU-USD`)].ask[0]
+                  ).toFixed(6)
+                );
               } else {
-                marketPrice = parseFloat(parseFloat(converter[`XAU-USD`].bid[0] * 0.9998).toFixed(2));
+                marketPrice = parseFloat(
+                  parseFloat(converter[`XAU-USD`].bid[0] * 0.9998).toFixed(2)
+                );
                 priceOz =
-                  marketPrice >= calculatedPrice ? marketPrice : calculatedPrice;
-                usdtPrice =
-                  parseFloat(parseFloat(parseFloat(priceOz / ounceConversion) *
-                    converter[getSecondaryPair(`XAU-USD`)].bid[0]).toFixed(6));
+                  marketPrice >= calculatedPrice
+                    ? marketPrice
+                    : calculatedPrice;
+                usdtPrice = parseFloat(
+                  parseFloat(
+                    parseFloat(priceOz / ounceConversion) *
+                      converter[getSecondaryPair(`XAU-USD`)].bid[0]
+                  ).toFixed(6)
+                );
               }
               const uniqueId = uuid();
               const orderData = {
@@ -1316,7 +1330,9 @@ module.exports = {
           flags[`updateExternalExchangeOrders-SBC`] = true;
           flags[`updateExternalExchangeOrders-SBC-time`] = new Date();
 
-          const orders = await externalExchangeOrders.find({ status: "active" });
+          const orders = await externalExchangeOrders.find({
+            status: "active",
+          });
           let i,
             order,
             orderId,

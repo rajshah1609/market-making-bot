@@ -17,7 +17,7 @@ mails.send = async function (
   html,
   attachments,
   text = "",
-  from = "Indsoft Node Monitor Alert " + process.env.MAIL_FROM
+  from = "Market Making Bot " + process.env.MAIL_FROM
 ) {
   var info = await transporter
     .sendMail({
