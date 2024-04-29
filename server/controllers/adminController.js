@@ -590,16 +590,19 @@ exports.addKey = async (req, res) => {
         passPhrase,
         subAccUserId,
         accountId,
+        memo,
         encApiKey,
         encApiSecret,
         encPassPhrase,
         encSubAccUserId,
-        encAccountId;
+        encAccountId,
+        encMemo;
       apiKey = req.body.apiKey || "";
       apiSecret = req.body.apiSecret || "";
       passPhrase = req.body.passPhrase || "";
       subAccUserId = req.body.subAccUserId || "";
       accountId = req.body.accountId || "";
+      memo = req.body.memo || "";
       if (exchange == "huobi") {
         const accountData = await huobi.getAccounts({ apiKey, apiSecret });
         if (accountData != "error" && accountData.data) {
@@ -620,6 +623,7 @@ exports.addKey = async (req, res) => {
       encSubAccUserId =
         subAccUserId == "" ? "" : AESEncrypt(subAccUserId, secret);
       encAccountId = accountId == "" ? "" : AESEncrypt(accountId, secret);
+      encMemo = memo == "" ? "" : AESEncrypt(memo, secret);
       const data = new exchangeData({
         uniqueId: uuid(),
         exchange,
@@ -628,6 +632,7 @@ exports.addKey = async (req, res) => {
         passPhrase: encPassPhrase,
         subAccUserId: encSubAccUserId,
         accountId: encAccountId,
+        memo: encMemo,
       });
       await data.save();
       return responseHelper.successWithMessage(res, "Key Added succesfully");

@@ -53,6 +53,7 @@ let initialState = {
   passPhrase: "",
   subAccUserId: "",
   accountId: "",
+  memo: "",
 };
 
 class ManageKeys extends Component {
@@ -243,6 +244,23 @@ class ManageKeys extends Component {
                           }
                         />
                       </>
+                    ) : null}
+                    {this.state.exchange === "bitmart" ? (
+                      <RenderInput
+                        label="Memo"
+                        element={
+                          <Form.Control
+                            type="text"
+                            placeholder="Enter Memo"
+                            value={this.state.memo}
+                            onChange={(e) =>
+                              this.setState({
+                                memo: e.target.value,
+                              })
+                            }
+                          />
+                        }
+                      />
                     ) : null}
                     {/* {this.state.exchange === "huobi" ? (
                       <RenderInput

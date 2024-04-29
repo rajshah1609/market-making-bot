@@ -568,6 +568,12 @@ function parseOrderbook(exchange, book) {
           ask: [parseFloat(book.ask[0]), parseFloat(book.ask[1])],
         };
       }
+      case "bitmart": {
+        return {
+          bid: [parseFloat(book.bid.price), parseFloat(book.bid.amount)],
+          ask: [parseFloat(book.ask.price), parseFloat(book.ask.amount)],
+        };
+      }
     }
   } catch (error) {
     logger.error(`redis_parseOrderBook_error`, error, exchange, book);
@@ -650,6 +656,18 @@ function parseCompleteOrderBook(exchange, book) {
         }
         for (i = 0; i < book.ask.length && i < 10; i++) {
           askArray.push([book.ask[i][0], book.ask[i][1]]);
+        }
+        return {
+          bid: bidArray,
+          ask: askArray,
+        };
+      }
+      case "bitmart": {
+        for (i = 0; i < book.bid.length && i < 10; i++) {
+          bidArray.push([book.bid[i].price, book.bid[i].amount]);
+        }
+        for (i = 0; i < book.ask.length && i < 10; i++) {
+          askArray.push([book.ask[i].price, book.ask[i].amount]);
         }
         return {
           bid: bidArray,

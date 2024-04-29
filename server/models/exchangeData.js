@@ -9,6 +9,7 @@ const exchangeData = new mongoose.Schema(
     passPhrase: { type: String, default: "" },
     subAccUserId: { type: String, default: "" },
     accountId: { type: String, default: "" },
+    memo: { type: String, default: "" },
   },
   {
     timestamps: true,

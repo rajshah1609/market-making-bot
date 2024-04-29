@@ -210,6 +210,7 @@ export const PairDecimalsAmount = {
   "XRP-USDT": 4,
   "LBT-USDT": 0,
   "ETH-USDT": 4,
+  "CGO-USDT": 2,
 };
 
 export const CurrencyDecimalsAmount = {
@@ -226,6 +227,7 @@ export const CurrencyDecimalsAmount = {
   PLI: 4,
   LUNA: 4,
   LBT: 4,
+  CGO: 4,
 };
 
 export const PairDecimalsPrice = {
@@ -250,6 +252,7 @@ export const PairDecimalsPrice = {
   "LUNA-USDT": 8,
   "XRP-USDT": 6,
   "LBT-USDT": 6,
+  "CGO-USDT": 2,
 };
 
 export const Accounts = [

@@ -16,6 +16,7 @@ const bittrex = require("./exchangeHelpers/bittrex");
 const gateio = require("./exchangeHelpers/gateio");
 const huobi = require("./exchangeHelpers/huobi");
 const exchangeData = require("../models/exchangeData");
+const bitmart = require("./exchangeHelpers/bitmart");
 const ExchangePairInfo = { ...ExchangePairInfoDef };
 
 exports.PlaceOrder = async (exchange, orderData) => {
@@ -90,6 +91,14 @@ exports.PlaceOrder = async (exchange, orderData) => {
       const resp = await huobi.placeOrder(orderData);
       if (resp != "" && resp != "error" && resp != null) {
         orderId = resp.data;
+      } else {
+        logger.error(exchange, orderData, resp);
+        orderId = "error";
+      }
+    } else if (exchange == "bitmart") {
+      const resp = await bitmart.placeOrder(orderData);
+      if (resp != "" && resp != "error" && resp != null) {
+        orderId = resp.data.order_id;
       } else {
         logger.error(exchange, orderData, resp);
         orderId = "error";
@@ -226,6 +235,20 @@ exports.GetMaxMinPrice = async (exchange, pair) => {
         ExchangePairInfo[exchange][pair].decimalsPrice
       )
     );
+  } else if (exchange == "bitmart") {
+    orderBookData = await bitmart.orderBook(pair);
+    bids = orderBookData.bids;
+    asks = orderBookData.asks;
+    maxPrice = parseFloat(
+      parseFloat(asks[0].price).toFixed(
+        ExchangePairInfo[exchange][pair].decimalsPrice
+      )
+    );
+    minPrice = parseFloat(
+      parseFloat(bids[0].price).toFixed(
+        ExchangePairInfo[exchange][pair].decimalsPrice
+      )
+    );
   }
 
   return { maxPrice, minPrice };
@@ -249,6 +272,12 @@ exports.GetAccount = async (exchange) => {
         apiKey: await GetDecryptedEnv(data.apiKey),
         apiSecret: await GetDecryptedEnv(data.apiSecret),
         accountId: await GetDecryptedEnv(data.accountId),
+      };
+    } else if (exchange == "bitmart") {
+      return {
+        apiKey: await GetDecryptedEnv(data.apiKey),
+        apiSecret: await GetDecryptedEnv(data.apiSecret),
+        memo: await GetDecryptedEnv(data.memo),
       };
     } else {
       return {
@@ -415,6 +444,31 @@ exports.GetOrderStatus = async (exchange, reqData) => {
         fees = filledQty * reqData.price * 0.002;
         feeCurrency = reqData.pair.split("-")[1];
       }
+    } else if (exchange == "bitmart") {
+      responseData = await bitmart.orderStatus(reqData);
+      if (responseData.data != null) {
+        filledQty = parseFloat(responseData.data.filledSize);
+        status = responseData.data.state;
+        if (status == "filled") {
+          status = "completed";
+        } else if (
+          status == "partially_canceled" ||
+          status == "canceled" ||
+          status == "failed"
+        ) {
+          status = "cancelled";
+        } else {
+          status = "active";
+        }
+      } else if (
+        responseData.data == null &&
+        responseData.message == "orderId or clientId have no data"
+      ) {
+        filledQty = 0;
+        status = "cancelled";
+      }
+      fees = feesUSDT = filledQty * reqData.price * 0.0025;
+      feeCurrency = "USDT";
     }
 
     filledQty = parseFloat(filledQty);
@@ -781,6 +835,35 @@ exports.WalletBalance = async (exchange, accountData) => {
           }
         }
         break;
+      case "bitmart":
+        responseData = await bitmart.walletBalance(accountData);
+        for (i = 0; i < exchangeData.currency.length; i++) {
+          if (
+            responseData.data.wallet.some(
+              (e) => e.id == exchangeData.currency[i].exchangeSymbol
+            )
+          ) {
+            const data = responseData.data.wallet.filter(
+              (e) => e.id == exchangeData.currency[i].exchangeSymbol
+            )[0];
+            array = {};
+            array.currency = exchangeData.currency[i].symbol;
+            array.balance = parseFloat(data.available);
+            array.inTrade = parseFloat(data.frozen);
+            array.minBalance =
+              typeof exchangeData.currency[i].minimumBalance !==
+              typeof undefined
+                ? exchangeData.currency[i].minimumBalance
+                : 0;
+            array.minArbBalance =
+              typeof exchangeData.currency[i].minArbBalance !== typeof undefined
+                ? exchangeData.currency[i].minArbBalance
+                : 0;
+            array.total = parseFloat(data.total);
+            walletData.push(array);
+          }
+        }
+        break;
       default:
         break;
     }
@@ -826,6 +909,9 @@ exports.CancelOrder = async (exchange, reqData) => {
         break;
       case "huobi":
         await huobi.cancelOrder(reqData);
+        break;
+      case "bitmart":
+        await bitmart.cancelOrder(reqData);
         break;
       default:
         break;
@@ -912,6 +998,9 @@ exports.LastTradedPrice = async (exchange, pair) => {
       case "gateio":
         tickerData = await gateio.ticker24Hr(pair);
         return tickerData.last;
+      case "bitmart":
+        tickerData = await bitmart.ticker24Hr(pair);
+        return tickerData.data.last_price;
       default:
         return 0;
     }
@@ -943,6 +1032,9 @@ exports.last24HrVolume = async (exchange, pair) => {
       case "huobi":
         tickerData = await huobi.ticker24Hr(pair);
         return tickerData.tick.amount;
+      case "bitmart":
+        tickerData = await bitmart.ticker24Hr(pair);
+        return tickerData.data.base_volume_24h;
       default:
         return 0;
     }
