@@ -295,6 +295,7 @@ class ManageKeys extends Component {
                               passPhrase: this.state.passPhrase,
                               subAccUserId: this.state.subAccUserId,
                               accountId: this.state.accountId,
+                              memo: this.state.memo,
                             },
                             {
                               headers: {
