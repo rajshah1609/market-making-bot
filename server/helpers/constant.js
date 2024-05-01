@@ -1,7 +1,7 @@
 /**
  * @constant exchanges list of exchanges which the CrypBot is connected to
  */
-const exchanges = ["bitrue", "bitmart"];
+const exchanges = ["bitrue", "bitmart", "lbank"];
 
 exports.Exchanges = exchanges;
 
@@ -48,6 +48,14 @@ let ExchangePairInfo = {
       maxAmount: 5000,
     },
   },
+  lbank: {
+    "CGO-USDT": {
+      decimalsAmount: 2,
+      decimalsPrice: 4,
+      minAmount: 0.05,
+      maxAmount: 5000,
+    },
+  },
 };
 
 exports.setExchangePairInfo = (data) => {
@@ -56,7 +64,7 @@ exports.setExchangePairInfo = (data) => {
 
 exports.ExchangePairInfo = ExchangePairInfo;
 
-const UsdtPairs = ["XDC-USDT", "XDC-USD", "XDC-USDC"];
+const UsdtPairs = ["XDC-USDT", "XDC-USD", "XDC-USDC", "CGO-USDT"];
 
 exports.UsdtPairs = UsdtPairs;
 
@@ -64,7 +72,7 @@ const converterPairs = ["ETH-USDT", "XRP-USDT", "BTC-USDT", "XDC-USDT"];
 
 exports.converterPairs = converterPairs;
 
-exports.primaryCurrencies = ["XDC"];
+exports.primaryCurrencies = ["XDC", "CGO"];
 
 const ExchangeCurrencyInfo = {
   bitrue: {
@@ -82,6 +90,10 @@ const ExchangeCurrencyInfo = {
   bitmart: {
     USDT: { exchangeSymbol: "USDT", name: "USD Tether", currencyId: "" },
     CGO: { exchangeSymbol: "CGO", name: "Comtech Gold", currencyId: "" },
+  },
+  lbank: {
+    USDT: { exchangeSymbol: "usdt", name: "USD Tether", currencyId: "" },
+    CGO: { exchangeSymbol: "cgo", name: "Comtech Gold", currencyId: "" },
   },
 };
 

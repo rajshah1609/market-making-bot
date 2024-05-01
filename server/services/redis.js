@@ -574,6 +574,12 @@ function parseOrderbook(exchange, book) {
           ask: [parseFloat(book.ask.price), parseFloat(book.ask.amount)],
         };
       }
+      case "lbank": {
+        return {
+          bid: [parseFloat(book.bid[0]), parseFloat(book.bid[1])],
+          ask: [parseFloat(book.ask[0]), parseFloat(book.ask[1])],
+        };
+      }
     }
   } catch (error) {
     logger.error(`redis_parseOrderBook_error`, error, exchange, book);
@@ -668,6 +674,18 @@ function parseCompleteOrderBook(exchange, book) {
         }
         for (i = 0; i < book.ask.length && i < 10; i++) {
           askArray.push([book.ask[i].price, book.ask[i].amount]);
+        }
+        return {
+          bid: bidArray,
+          ask: askArray,
+        };
+      }
+      case "lbank": {
+        for (i = 0; i < book.bid.length && i < 10; i++) {
+          bidArray.push([book.bid[i][0], book.bid[i][1]]);
+        }
+        for (i = 0; i < book.ask.length && i < 10; i++) {
+          askArray.push([book.ask[i][0], book.ask[i][1]]);
         }
         return {
           bid: bidArray,

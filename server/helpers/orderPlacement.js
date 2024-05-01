@@ -17,6 +17,7 @@ const gateio = require("./exchangeHelpers/gateio");
 const huobi = require("./exchangeHelpers/huobi");
 const exchangeData = require("../models/exchangeData");
 const bitmart = require("./exchangeHelpers/bitmart");
+const lbank = require("./exchangeHelpers/lbank");
 const ExchangePairInfo = { ...ExchangePairInfoDef };
 
 exports.PlaceOrder = async (exchange, orderData) => {
@@ -97,6 +98,14 @@ exports.PlaceOrder = async (exchange, orderData) => {
       }
     } else if (exchange == "bitmart") {
       const resp = await bitmart.placeOrder(orderData);
+      if (resp != "" && resp != "error" && resp != null) {
+        orderId = resp.data.order_id;
+      } else {
+        logger.error(exchange, orderData, resp);
+        orderId = "error";
+      }
+    } else if (exchange == "lbank") {
+      const resp = await lbank.placeOrder(orderData);
       if (resp != "" && resp != "error" && resp != null) {
         orderId = resp.data.order_id;
       } else {
@@ -246,6 +255,20 @@ exports.GetMaxMinPrice = async (exchange, pair) => {
     );
     minPrice = parseFloat(
       parseFloat(bids[0].price).toFixed(
+        ExchangePairInfo[exchange][pair].decimalsPrice
+      )
+    );
+  } else if (exchange == "lbank") {
+    orderBookData = await lbank.orderBook(pair);
+    bids = orderBookData.bids;
+    asks = orderBookData.asks;
+    maxPrice = parseFloat(
+      parseFloat(asks[0][0]).toFixed(
+        ExchangePairInfo[exchange][pair].decimalsPrice
+      )
+    );
+    minPrice = parseFloat(
+      parseFloat(bids[0][0]).toFixed(
         ExchangePairInfo[exchange][pair].decimalsPrice
       )
     );
@@ -468,6 +491,20 @@ exports.GetOrderStatus = async (exchange, reqData) => {
         status = "cancelled";
       }
       fees = feesUSDT = filledQty * reqData.price * 0.0025;
+      feeCurrency = "USDT";
+    } else if (exchange == "lbank") {
+      responseData = await lbank.orderStatus(reqData);
+      filledQty = parseFloat(responseData.data.executedQty);
+      status = responseData.data.status;
+      if (status == 2) {
+        status = "completed";
+      } else if (status == 3 || status == -1) {
+        status = "cancelled";
+      } else {
+        status = "active";
+      }
+      // fees = feesUSDT = filledQty * reqData.price * 0.0025;
+      fees = 0;
       feeCurrency = "USDT";
     }
 
@@ -864,6 +901,34 @@ exports.WalletBalance = async (exchange, accountData) => {
           }
         }
         break;
+      case "lbank":
+        responseData = await lbank.walletBalance(accountData);
+        for (i = 0; i < exchangeData.currency.length; i++) {
+          if (
+            responseData.data.balances.some(
+              (e) => e.asset == exchangeData.currency[i].exchangeSymbol
+            )
+          ) {
+            const data = responseData.data.balances.filter(
+              (e) => e.asset == exchangeData.currency[i].exchangeSymbol
+            )[0];
+            array = {};
+            array.currency = exchangeData.currency[i].symbol;
+            array.balance = parseFloat(data.free);
+            array.inTrade = parseFloat(data.locked);
+            array.minBalance =
+              typeof exchangeData.currency[i].minimumBalance !==
+              typeof undefined
+                ? exchangeData.currency[i].minimumBalance
+                : 0;
+            array.minArbBalance =
+              typeof exchangeData.currency[i].minArbBalance !== typeof undefined
+                ? exchangeData.currency[i].minArbBalance
+                : 0;
+            array.total = parseFloat(array.balance + array.inTrade);
+            walletData.push(array);
+          }
+        }
       default:
         break;
     }
@@ -913,6 +978,8 @@ exports.CancelOrder = async (exchange, reqData) => {
       case "bitmart":
         await bitmart.cancelOrder(reqData);
         break;
+      case "lbank":
+        await lbank.cancelOrder(reqData);
       default:
         break;
     }
@@ -1001,6 +1068,9 @@ exports.LastTradedPrice = async (exchange, pair) => {
       case "bitmart":
         tickerData = await bitmart.ticker24Hr(pair);
         return tickerData.data.last_price;
+      case "lbank":
+        tickerData = await lbank.ticker24Hr(pair);
+        return tickerData.data[0].ticker.latest;
       default:
         return 0;
     }
@@ -1035,6 +1105,9 @@ exports.last24HrVolume = async (exchange, pair) => {
       case "bitmart":
         tickerData = await bitmart.ticker24Hr(pair);
         return tickerData.data.base_volume_24h;
+      case "lbank":
+        tickerData = await lbank.ticker24Hr(pair);
+        return tickerData.data[0].ticker.vol;
       default:
         return 0;
     }
