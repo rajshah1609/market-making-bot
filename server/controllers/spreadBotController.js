@@ -336,30 +336,30 @@ module.exports = {
                     usdtPrice / converter[getSecondaryPair(pair)].bid[0]
                   ).toFixed(ExchangePairInfo[exchange][pair].decimalsPrice)
                 );
-                checkPrice = await spreadBotOrders.findOne({
-                  exchange,
-                  pair,
-                  price,
-                  status: "active",
-                });
-                while (checkPrice) {
-                  usdtPrice = parseFloat(
-                    parseFloat(
-                      usdtPrice * (1 - (Math.random() * (1 - 0) + 0) / 1000)
-                    ).toFixed(6)
-                  );
-                  price = parseFloat(
-                    parseFloat(
-                      usdtPrice / converter[getSecondaryPair(pair)].bid[0]
-                    ).toFixed(ExchangePairInfo[exchange][pair].decimalsPrice)
-                  );
-                  checkPrice = await spreadBotOrders.findOne({
-                    exchange,
-                    pair,
-                    price,
-                    status: "active",
-                  });
-                }
+                // checkPrice = await spreadBotOrders.findOne({
+                //   exchange,
+                //   pair,
+                //   price,
+                //   status: "active",
+                // });
+                // while (checkPrice) {
+                //   usdtPrice = parseFloat(
+                //     parseFloat(
+                //       usdtPrice * (1 - (Math.random() * (1 - 0) + 0) / 1000)
+                //     ).toFixed(6)
+                //   );
+                //   price = parseFloat(
+                //     parseFloat(
+                //       usdtPrice / converter[getSecondaryPair(pair)].bid[0]
+                //     ).toFixed(ExchangePairInfo[exchange][pair].decimalsPrice)
+                //   );
+                //   checkPrice = await spreadBotOrders.findOne({
+                //     exchange,
+                //     pair,
+                //     price,
+                //     status: "active",
+                //   });
+                // }
                 type = generatedOrder.type;
                 if (generatedOrder.type == "buy") {
                   // if ([8, 9, 10].includes(j)) {
