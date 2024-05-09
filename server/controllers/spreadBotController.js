@@ -250,7 +250,7 @@ module.exports = {
             { status: "cancelled" },
             { multi: true }
           );
-          arbitrageData.cgoData.lastPrice = arbitrageData.cgoData.lastPrice;
+          arbitrageData.cgoData.lastPrice = 0;
           arbitrageData.cgoData.bidPrice = arbitrageData.cgoData.bidPrice;
           arbitrageData.cgoData.askPrice = arbitrageData.cgoData.askPrice;
           arbitrageData.cgoData.generatedMarketClosedOrders = false;
