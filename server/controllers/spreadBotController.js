@@ -161,7 +161,10 @@ module.exports = {
                 arbitrageData.cgoData.generatedMarketClosedOrders = false;
                 arbitrageData.cgoData.bidPrice = bidPrice;
                 arbitrageData.cgoData.askPrice = askPrice;
+                arbitrageData.cgoData.message =
+                  "updated as price changed from stonex";
                 arbitrageData.markModified("cgoData");
+                await arbitrageData.save();
               }
             }
           } else {
@@ -215,15 +218,23 @@ module.exports = {
                   newOrder.save();
                   openOrders.push(uniqueId);
                 }
-                arbitrageData.cgoData.generatedMarketClosedOrders = true;
-                arbitrageData.cgoData.lastPrice = cgoData.lastPrice;
-                arbitrageData.cgoData.bidPrice = cgoData.bidPrice;
-                arbitrageData.cgoData.askPrice = cgoData.askPrice;
-                arbitrageData.markModified("cgoData");
+                if (
+                  cgoData.lastPrice > 0 &&
+                  cgoData.bidPrice > 0 &&
+                  cgoData.askPrice > 0
+                ) {
+                  arbitrageData.cgoData.generatedMarketClosedOrders = true;
+                  arbitrageData.cgoData.lastPrice = cgoData.lastPrice;
+                  arbitrageData.cgoData.bidPrice = cgoData.bidPrice;
+                  arbitrageData.cgoData.askPrice = cgoData.askPrice;
+                  arbitrageData.cgoData.message =
+                    "generated market closed orders";
+                  arbitrageData.markModified("cgoData");
+                  await arbitrageData.save();
+                }
               }
             }
           }
-          await arbitrageData.save();
           if (openOrders.length > 0)
             await spreadBotGeneratedOrders.updateMany(
               {
@@ -239,8 +250,11 @@ module.exports = {
             { status: "cancelled" },
             { multi: true }
           );
-          arbitrageData.cgoData.lastPrice = 0;
+          arbitrageData.cgoData.lastPrice = arbitrageData.cgoData.lastPrice;
+          arbitrageData.cgoData.bidPrice = arbitrageData.cgoData.bidPrice;
+          arbitrageData.cgoData.askPrice = arbitrageData.cgoData.askPrice;
           arbitrageData.cgoData.generatedMarketClosedOrders = false;
+          arbitrageData.cgoData.message = "updated as no open orders";
           arbitrageData.markModified("cgoData");
           await arbitrageData.save();
         }

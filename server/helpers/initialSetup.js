@@ -75,7 +75,11 @@ module.exports = {
             buy: {},
             sell: {},
           },
-          cgoData: { generatedMarketClosedOrders: false, lastPrice: 0 },
+          cgoData: {
+            generatedMarketClosedOrders: false,
+            lastPrice: 0,
+            message: "updated on initial setup",
+          },
         });
         console.log(newOperation);
         await newOperation.save();
