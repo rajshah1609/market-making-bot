@@ -37,7 +37,7 @@ module.exports = {
       const type = reqData.type.toLowerCase();
       const amount = reqData.amount;
       const price = reqData.price;
-      const timestamp = new Date().getTime().toString();
+      // const timestamp = new Date().getTime().toString();
       const url = "https://api-cloud.bitmart.com/spot/v2/submit_order";
       const body = {
         symbol: pair,
@@ -45,6 +45,7 @@ module.exports = {
         type: "limit",
         size: amount,
         price: price,
+        recvWindow: 15000,
       };
       const ordered = {};
       Object.keys(body)
@@ -53,6 +54,7 @@ module.exports = {
           ordered[key] = body[key];
         });
       const queryString = JSON.stringify(ordered);
+      const timestamp = await getTimeStamp();
       const signature = crypto
         .createHmac("sha256", apiSecret)
         .update(`${timestamp}#${memo}#${queryString}`)
@@ -85,9 +87,10 @@ module.exports = {
       const apiKey = reqData.apiKey;
       const apiSecret = reqData.apiSecret;
       const memo = reqData.memo;
-      const timestamp = new Date().getTime().toString();
+      // const timestamp = new Date().getTime().toString();
       const url = "https://api-cloud.bitmart.com/spot/v1/wallet";
       const queryString = "";
+      const timestamp = await getTimeStamp();
       const signature = crypto
         .createHmac("sha256", apiSecret)
         .update(`${timestamp}#${memo}#${queryString}`)
@@ -121,11 +124,12 @@ module.exports = {
       const memo = reqData.memo;
       const pair = convertPairForExchange(reqData.pair);
       const orderId = reqData.orderId;
-      const timestamp = new Date().getTime().toString();
+      // const timestamp = new Date().getTime().toString();
       const url = "https://api-cloud.bitmart.com/spot/v2/cancel_order";
       const body = {
         symbol: pair,
         order_id: orderId,
+        recvWindow: 15000,
       };
       const ordered = {};
       Object.keys(body)
@@ -134,6 +138,7 @@ module.exports = {
           ordered[key] = body[key];
         });
       const queryString = JSON.stringify(ordered);
+      const timestamp = await getTimeStamp();
       const signature = crypto
         .createHmac("sha256", apiSecret)
         .update(`${timestamp}#${memo}#${queryString}`)
@@ -167,12 +172,14 @@ module.exports = {
       const apiSecret = reqData.apiSecret;
       const memo = reqData.memo;
       const orderId = reqData.orderId;
-      const timestamp = new Date().getTime().toString();
+      // const timestamp = new Date().getTime().toString();
       const payload = {
         order_id: orderId,
+        recvWindow: 15000,
       };
       const queryString = qs.stringify(payload);
       const url = `https://api-cloud.bitmart.com/spot/v2/order_detail?${queryString}`;
+      const timestamp = await getTimeStamp();
       const signature = crypto
         .createHmac("sha256", apiSecret)
         .update(`${timestamp}#${memo}#${queryString}`)
@@ -209,9 +216,10 @@ module.exports = {
       const apiSecret = reqData.apiSecret;
       const memo = reqData.memo;
       const orderId = reqData.orderId;
-      const timestamp = new Date().getTime().toString();
+      // const timestamp = new Date().getTime().toString();
       const body = {
         orderId,
+        recvWindow: 15000,
       };
       const ordered = {};
       Object.keys(body)
@@ -221,6 +229,7 @@ module.exports = {
         });
       const queryString = JSON.stringify(ordered);
       const url = `https://api-cloud.bitmart.com/spot/v4/query/order`;
+      const timestamp = await getTimeStamp();
       const signature = crypto
         .createHmac("sha256", apiSecret)
         .update(`${timestamp}#${memo}#${queryString}`)
@@ -272,4 +281,18 @@ module.exports = {
 
 function convertPairForExchange(pair) {
   return pair.replace("-", "_").toUpperCase();
+}
+
+async function getTimeStamp() {
+  try {
+    const config = {
+      url: `https://api-cloud.bitmart.com/system/time`,
+      contentType: "application/json",
+    };
+    const orderResponse = await axiosHelper.makeGETRequest(config);
+    return orderResponse.data.data.server_time;
+  } catch (error) {
+    console.log("bitmart_getTimeStamp_error", error);
+    return Date.now();
+  }
 }
