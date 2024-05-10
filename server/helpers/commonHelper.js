@@ -11,10 +11,10 @@ module.exports = {
       const adminList = await adminHelper.getAdminsByAlertLevel(adminLevel);
       let i = 0,
         emails = [];
-      for (i = 0; i < adminList.length; i++) {
-        emails.push(adminList[i].email);
-      }
-      emails.push("raj@xinfin.org");
+      // for (i = 0; i < adminList.length; i++) {
+      //   emails.push(adminList[i].email);
+      // }
+      emails.push(["raj@xinfin.org", "jignesh@comtechgold.com"]);
       if (emails.length <= 0) {
         emails = ["raj@xinfin.org"];
       }
