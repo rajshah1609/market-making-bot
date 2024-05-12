@@ -99,72 +99,74 @@ module.exports = {
               const baseUsdtPrice = parseFloat(
                 parseFloat((bidPrice + askPrice) / 2).toFixed(6)
               );
-              if (Object.entries(cgoData).length != 0) {
-                const lastPrice = cgoData.lastPrice;
-                const upperLimit = parseFloat(
-                  parseFloat(lastPrice * 1.001).toFixed(6)
-                );
-                const lowerLimit = parseFloat(
-                  parseFloat(lastPrice * 0.999).toFixed(6)
-                );
-                console.log(
-                  "prices",
-                  upperLimit,
-                  lastPrice,
-                  lowerLimit,
-                  baseUsdtPrice
-                );
-                if (upperLimit > baseUsdtPrice && baseUsdtPrice > lowerLimit)
-                  generateOrder = false;
-                if (cgoData.generatedMarketClosedOrders) generateOrder = true;
-              }
-              if (generateOrder) {
-                for (i = 1; i <= 10; i++) {
-                  usdtPrice = parseFloat(
-                    parseFloat(baseUsdtPrice * (1 + i * 0.002)).toFixed(6)
+              if (baseUsdtPrice > 0 && bidPrice > 0 && askPrice > 0) {
+                if (Object.entries(cgoData).length != 0) {
+                  const lastPrice = cgoData.lastPrice;
+                  const upperLimit = parseFloat(
+                    parseFloat(lastPrice * 1.001).toFixed(6)
                   );
-                  uniqueId = uuid();
-                  newOrder = new spreadBotGeneratedOrders({
-                    uniqueId,
-                    usdtPrice,
-                    currency: "CGO",
-                    type: "sell",
-                    status: "active",
-                    revOrderId: "",
-                    oppOrderId: "",
-                    cancelling: false,
-                    mappedOrders: [],
-                    multiplyer: multiplyerArray[i],
-                  });
-                  newOrder.save();
-                  openOrders.push(uniqueId);
-                  usdtPrice = parseFloat(
-                    parseFloat(baseUsdtPrice * (1 - i * 0.002)).toFixed(6)
+                  const lowerLimit = parseFloat(
+                    parseFloat(lastPrice * 0.999).toFixed(6)
                   );
-                  uniqueId = uuid();
-                  newOrder = new spreadBotGeneratedOrders({
-                    uniqueId,
-                    usdtPrice,
-                    currency: "CGO",
-                    type: "buy",
-                    status: "active",
-                    revOrderId: "",
-                    oppOrderId: "",
-                    cancelling: false,
-                    mappedOrders: [],
-                    multiplyer: multiplyerArray[i],
-                  });
-                  newOrder.save();
-                  openOrders.push(uniqueId);
+                  console.log(
+                    "prices",
+                    upperLimit,
+                    lastPrice,
+                    lowerLimit,
+                    baseUsdtPrice
+                  );
+                  if (upperLimit > baseUsdtPrice && baseUsdtPrice > lowerLimit)
+                    generateOrder = false;
+                  if (cgoData.generatedMarketClosedOrders) generateOrder = true;
                 }
-                arbitrageData.cgoData.lastPrice = baseUsdtPrice;
-                arbitrageData.cgoData.generatedMarketClosedOrders = false;
-                arbitrageData.cgoData.bidPrice = bidPrice;
-                arbitrageData.cgoData.askPrice = askPrice;
-                arbitrageData.cgoData.message =
-                  "updated as price changed from stonex";
-                arbitrageData.markModified("cgoData");
-                await arbitrageData.save();
+                if (generateOrder) {
+                  for (i = 1; i <= 10; i++) {
+                    usdtPrice = parseFloat(
+                      parseFloat(baseUsdtPrice * (1 + i * 0.002)).toFixed(6)
+                    );
+                    uniqueId = uuid();
+                    newOrder = new spreadBotGeneratedOrders({
+                      uniqueId,
+                      usdtPrice,
+                      currency: "CGO",
+                      type: "sell",
+                      status: "active",
+                      revOrderId: "",
+                      oppOrderId: "",
+                      cancelling: false,
+                      mappedOrders: [],
+                      multiplyer: multiplyerArray[i],
+                    });
+                    newOrder.save();
+                    openOrders.push(uniqueId);
+                    usdtPrice = parseFloat(
+                      parseFloat(baseUsdtPrice * (1 - i * 0.002)).toFixed(6)
+                    );
+                    uniqueId = uuid();
+                    newOrder = new spreadBotGeneratedOrders({
+                      uniqueId,
+                      usdtPrice,
+                      currency: "CGO",
+                      type: "buy",
+                      status: "active",
+                      revOrderId: "",
+                      oppOrderId: "",
+                      cancelling: false,
+                      mappedOrders: [],
+                      multiplyer: multiplyerArray[i],
+                    });
+                    newOrder.save();
+                    openOrders.push(uniqueId);
+                  }
+                  arbitrageData.cgoData.lastPrice = baseUsdtPrice;
+                  arbitrageData.cgoData.generatedMarketClosedOrders = false;
+                  arbitrageData.cgoData.bidPrice = bidPrice;
+                  arbitrageData.cgoData.askPrice = askPrice;
+                  arbitrageData.cgoData.message =
+                    "updated as price changed from stonex";
+                  arbitrageData.markModified("cgoData");
+                  await arbitrageData.save();
+                }
               }
             }
           } else {
