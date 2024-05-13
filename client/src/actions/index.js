@@ -1234,3 +1234,202 @@ export const getLiquidityOrderDetails = (data) => {
     }
   };
 };
+
+/*
+  -----------------------------------------------------
+
+  Volume Bot Action Starts
+
+  -----------------------------------------------------
+*/
+
+export const volumeBotUpdate = ({
+  exchange,
+  pair,
+  status,
+  minVolume,
+  maxVolume,
+  minSeconds,
+  maxSeconds,
+}) => {
+  return (dispatch) => {
+    try {
+      dispatch({ type: types.VOLUMEBOT_UPDATE_START });
+      AxiosInstance.post(
+        "/volume/updatebot",
+        {
+          exchange,
+          pair,
+          status,
+          minVolume,
+          maxVolume,
+          minSeconds,
+          maxSeconds,
+        },
+        { headers: { Authorization: localStorage.getItem("crypbot_jwt") } }
+      )
+        .then((resp) => {
+          resp = resp.data;
+          if (resp.statusCode === 200) {
+            dispatch({
+              type: types.VOLUMEBOT_UPDATE_SUCCESS,
+              success: resp.message,
+            });
+          } else {
+            dispatch({
+              type: types.VOLUMEBOT_UPDATE_FAIL,
+              error: ParseError(resp),
+            });
+          }
+        })
+        .catch((e) => {
+          // console.log(e);
+          dispatch({ type: types.VOLUMEBOT_UPDATE_FAIL, error: ParseError(e) });
+        })
+        .finally(() => {
+          dispatch({ type: types.VOLUMEBOT_UPDATE_FINISH });
+        });
+    } catch (e) {
+      // console.log(":actions :volumeBotUpdate", e);
+      dispatch({ type: types.VOLUMEBOT_UPDATE_FAIL, error: ParseError(e) });
+    }
+  };
+};
+
+export const volumeBotGet = () => {
+  return (dispatch) => {
+    try {
+      dispatch({ type: types.VOLUMEBOT_GET_START });
+      AxiosInstance.get("/volume/getbot", {
+        headers: { Authorization: localStorage.getItem("crypbot_jwt") },
+      })
+        .then((resp) => {
+          // console.log(":volumeget :resp", resp.data);
+          resp = resp.data;
+          if (resp.statusCode === 200) {
+            dispatch({
+              type: types.VOLUMEBOT_GET_SUCCESS,
+              data: resp.data,
+              success: resp.message,
+            });
+          } else {
+            dispatch({
+              type: types.VOLUMEBOT_GET_FAIL,
+              error: ParseError(resp),
+            });
+          }
+        })
+        .catch((e) => {
+          // console.log(e);
+        })
+        .finally(() => {
+          dispatch({ type: types.VOLUMEBOT_GET_FINISH });
+        });
+    } catch (e) {
+      // console.log(":actions :volumeBotUpdate", e);
+      dispatch({ type: types.VOLUMEBOT_GET_FAIL, error: ParseError(e) });
+    }
+  };
+};
+
+export const VolumebotForceStart = (data) => {
+  return (dispatch) => {
+    try {
+      const { exchange, pair } = data;
+      dispatch({ type: types.VOLUMEBOT_FORCE_START_START });
+      AxiosInstance.post(
+        "/volume/forcestart",
+        {
+          exchange,
+          pair,
+        },
+        {
+          headers: { Authorization: localStorage.getItem("crypbot_jwt") },
+        }
+      )
+        .then((resp) => {
+          // console.log(":VolumebotForceStart :resp", resp.data);
+          resp = resp.data;
+          if (resp.statusCode === 200) {
+            dispatch({
+              type: types.VOLUMEBOT_FORCE_START_SUCCESS,
+              data: resp.data,
+              success: resp.message,
+            });
+          } else {
+            dispatch({
+              type: types.VOLUMEBOT_FORCE_START_FAIL,
+              error: ParseError(resp),
+            });
+          }
+        })
+        .catch((e) => {
+          // console.log(":VolumebotForceStart", e);
+          dispatch({
+            type: types.VOLUMEBOT_FORCE_START_FAIL,
+            error: ParseError(e),
+          });
+        })
+        .finally(() => {
+          dispatch({ type: types.VOLUMEBOT_FORCE_START_FINISH });
+        });
+    } catch (e) {
+      // console.log(":VolumebotForceStart", e);
+      dispatch({
+        type: types.VOLUMEBOT_FORCE_START_FAIL,
+        error: ParseError(e),
+      });
+    }
+  };
+};
+
+export const VolumeBotDetails = (data) => {
+  return (dispatch) => {
+    try {
+      dispatch({ type: types.VOLUMEBOT_DETAILS_START });
+      AxiosInstance.post("/volume/addexchange", data, {
+        headers: { Authorization: localStorage.getItem("crypbot_jwt") },
+      })
+        .then((resp) => {
+          // console.log(":VolumebotDetails :resp", resp.data);
+          resp = resp.data;
+          if (resp.statusCode === 200) {
+            dispatch({
+              type: types.VOLUMEBOT_DETAILS_SUCCESS,
+              data: resp.data,
+              success: resp.message,
+            });
+          } else {
+            dispatch({
+              type: types.VOLUMEBOT_DETAILS_FAIL,
+              error: ParseError(resp),
+            });
+          }
+        })
+        .catch((e) => {
+          // console.error(":VolumebotDetails", e);
+          dispatch({
+            type: types.VOLUMEBOT_DETAILS_FAIL,
+            error: ParseError(e),
+          });
+        })
+        .finally(() => {
+          dispatch({ type: types.VOLUMEBOT_DETAILS_FINISH });
+        });
+    } catch (e) {
+      // console.error(":VolumebotDetails", e);
+      dispatch({
+        type: types.VOLUMEBOT_DETAILS_FAIL,
+        error: ParseError(e),
+      });
+    }
+  };
+};
+
+/*
+  -----------------------------------------------------
+
+  Volume Bot Action Stops
+
+  -----------------------------------------------------
+*/

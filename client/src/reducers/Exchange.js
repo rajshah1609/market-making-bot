@@ -714,6 +714,57 @@ export default function (state = initialData, action) {
     }
 
     /**
+     * @volumeBotDetails
+     */
+
+    case types.VOLUMEBOT_DETAILS_START: {
+      return {
+        ...state,
+        volumeBotDetails: {
+          ...state.volumeBotDetails,
+          loading: true,
+          success: null,
+          error: null,
+        },
+      };
+    }
+
+    case types.VOLUMEBOT_DETAILS_SUCCESS: {
+      return {
+        ...state,
+        volumeBotDetails: {
+          ...state.volumeBotDetails,
+          loading: false,
+          success: action.success,
+          data: action.data,
+          v: state.volumeBotDetails.v + 1,
+        },
+      };
+    }
+
+    case types.VOLUMEBOT_DETAILS_FAIL: {
+      return {
+        ...state,
+        volumeBotDetails: {
+          ...state.volumeBotDetails,
+          data: null,
+          error: action.error,
+          v: state.volumeBotDetails.v + 1,
+        },
+      };
+    }
+
+    case types.VOLUMEBOT_DETAILS_FINISH: {
+      return {
+        ...state,
+        volumeBotDetails: {
+          ...state.volumeBotDetails,
+          ts: Date.now(),
+        },
+      };
+    }
+
+    /**
      *
      *
      *

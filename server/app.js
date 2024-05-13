@@ -42,6 +42,9 @@ function connectToMongoDB() {
 
 connectToMongoDB();
 
+const volumeBotController = require("./controllers/volumeBotController");
+volumeBotController.checkBots();
+
 const { checkSetup } = require("./helpers/initialSetup");
 
 checkSetup();
@@ -61,6 +64,7 @@ require("events").EventEmitter.defaultMaxListeners = 20;
 const indexRouter = require("./routes/index");
 const adminRouter = require("./routes/admin");
 const spreadBotRouter = require("./routes/spreadBot");
+const volumeBotRouter = require("./routes/volumeBot");
 const bitrue = require("./helpers/exchangeHelpers/bitrue");
 const stonex = require("./helpers/exchangeHelpers/stonex");
 const { RedisClient } = require("./services/redis");
@@ -92,6 +96,7 @@ app.use(cors());
 app.use("/", indexRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/spreadbot", spreadBotRouter);
+app.use("/api/volume", volumeBotRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

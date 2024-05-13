@@ -10,12 +10,15 @@ const RedisClient = require("../services/redis").RedisClient;
 const arbitrageOperations = require("../models/arbitrageOperations");
 const uuid = require("uuid").v4;
 const completedOrders = require("../models/completedOrders");
+const spreadBotOrders = require("../models/spreadBotOrders");
 const { ExchangePairInfo } = require("../helpers/constant");
 const {
   getSecondaryPair,
   parseCompleteOrderBook,
 } = require("../services/redis");
 const commonHelper = require("../helpers/commonHelper");
+const volumeBotDetailsHelper = require("../helpers/databaseHelpers/volumeBotDetailsHelper");
+const volumeBotOrdersHelper = require("../helpers/databaseHelpers/volumeBotOrdersHelper");
 // const { getTotalFees } = require("../helpers/commonHelper");
 let startDate = new Date(Date.UTC(2021, 7, 2, 2, 30, 0, 0));
 
@@ -601,6 +604,68 @@ module.exports = {
       }
     } catch (error) {
       logger.error(`cronController_updatedCompletedOrdersStatus_error`, error);
+      return "error";
+    }
+  },
+
+  checkVolumeBots: async () => {
+    try {
+      const volumeBotData = await volumeBotDetailsHelper.getAllBotDetails();
+      let i,
+        exchange,
+        pair,
+        status,
+        message = "",
+        orderData,
+        lastOrderTime,
+        maxSeconds,
+        difference,
+        sendmail = 0;
+      const currentTime = new Date();
+      for (i = 0; i < volumeBotData.length; i++) {
+        exchange = volumeBotData[i].exchange;
+        if (exchange != "wbf") {
+          pair = volumeBotData[i].details.pair;
+          status = volumeBotData[i].details.status;
+          maxSeconds = (volumeBotData[i].details.maxSeconds + 1) * 2;
+          if (status == "start") {
+            orderData = await volumeBotOrdersHelper.getLastOrder(
+              exchange,
+              pair
+            );
+            if (orderData != "" && orderData != null && orderData != "error") {
+              lastOrderTime = new Date(orderData.createdAt);
+              difference = parseFloat(
+                parseFloat((currentTime - lastOrderTime) / 1000).toFixed(0)
+              );
+              if (difference > maxSeconds) {
+                message =
+                  message +
+                  " Volume bot has stopped in " +
+                  exchange +
+                  " for the pair " +
+                  pair +
+                  ", no order placed since " +
+                  parseFloat(parseFloat(difference / 60).toFixed(0)) +
+                  " minutes, last order placed at : " +
+                  lastOrderTime +
+                  " <br>";
+                sendmail = 1;
+              }
+            }
+          }
+        }
+      }
+      if (sendmail == 1) {
+        const emails = await commonHelper.getEmailsForMail(1);
+        await mail.send(
+          emails,
+          "Volume bot has stopped for the following exchange and pair",
+          message
+        );
+      }
+    } catch (error) {
+      logger.error(`cronController_checkVolumeBots_error : `, error);
       return "error";
     }
   },

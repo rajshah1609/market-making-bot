@@ -31,6 +31,7 @@ import Liquidity from "./Liquidity";
 import ManageKeys from "./ManageKeys";
 import LiquidityDetails from "./LiquidityDetails";
 // import OrderBookSharing from "../containers/OrderBookSharing";
+import VolumeBot from "../containers/VolumeBot";
 
 class App extends React.Component {
   renderSwitch() {
@@ -52,6 +53,7 @@ class App extends React.Component {
             path="/liquidity-details/:uniqueId"
             component={LiquidityDetails}
           />
+          <Route exact path="/volumebot" component={VolumeBot} />
           <Redirect from="*" to="/" />
         </Switch>
       );

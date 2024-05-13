@@ -1,6 +1,7 @@
 const CronJob = require("cron").CronJob;
 const cronController = require("../controllers/cronController");
 const spreadBotController = require("../controllers/spreadBotController");
+const volumeBotController = require("../controllers/volumeBotController");
 
 // new CronJob(
 //   "56 * * * *",
@@ -15,6 +16,7 @@ const spreadBotController = require("../controllers/spreadBotController");
 new CronJob(
   "14 * * * * *",
   async () => {
+    volumeBotController.placeErrorOrders();
     await spreadBotController.resetFlags();
     await spreadBotController.autoCancelOrders();
     await spreadBotController.generateOrders();
@@ -38,6 +40,17 @@ new CronJob(
     cronController.updatedCompletedOrdersStatus();
     // spreadBotController.updateMaintainOrderStatus();
     await spreadBotController.updateOrders10Min();
+  },
+  null,
+  true,
+  "Asia/Kolkata"
+);
+
+new CronJob(
+  "*/5 * * * *",
+  async () => {
+    await volumeBotController.checkAndUpdateVolumeBot();
+    volumeBotController.updateLoss();
   },
   null,
   true,

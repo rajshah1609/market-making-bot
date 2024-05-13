@@ -8,6 +8,7 @@ import DailyStatsReducer from "./DailyStatsReducer";
 import LiquidityBotReducer from "./LiquidityBotReducer";
 import ManageKeysReducer from "./ManageKeysReducer";
 import LiquidityDetailsBotReducer from "./LiquidityDetailsBotReducer";
+import Volumebot from "./VolumeBot";
 
 export default {
   auth: Auth,
@@ -20,4 +21,5 @@ export default {
   LiquidityBotReducer: LiquidityBotReducer,
   ManageKeysReducer: ManageKeysReducer,
   LiquidityDetailsBotReducer: LiquidityDetailsBotReducer,
+  volumeBot: Volumebot,
 };

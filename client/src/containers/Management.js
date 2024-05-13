@@ -128,6 +128,10 @@ const initialState = {
     exchangeAdd: {
       exchange: null,
     },
+    volumeBotDetails: {
+      exchange: null,
+      pair: null,
+    },
   },
   arbitrage: {},
 };
@@ -1023,6 +1027,72 @@ class Management extends Component {
             </Card>
           </Col>
         </Row>
+        <hr />
+        <div className="section-title">Bot Details Management</div>
+        <Row>
+          <Col md={6} lg={6} sm={12}>
+            <Card className="simple-card">
+              <div className="simple-card--header">Volume Bot Details</div>
+              <div className="simple-card--body">
+                <Form>
+                  <RenderInput
+                    label="Exchange"
+                    element={
+                      <Form.Control
+                        type="text"
+                        placeholder="Enter Exchange"
+                        value={this.state.exchange.volumeBotDetails.exchange}
+                        onChange={(e) =>
+                          this.setState({
+                            exchange: {
+                              ...this.state.exchange,
+                              volumeBotDetails: {
+                                ...this.state.exchange.volumeBotDetails,
+                                exchange: e.target.value,
+                              },
+                            },
+                          })
+                        }
+                      />
+                    }
+                  />
+                  <RenderInput
+                    label="Pair"
+                    element={
+                      <Form.Control
+                        type="text"
+                        placeholder="Enter Pair"
+                        value={this.state.exchange.volumeBotDetails.pair}
+                        onChange={(e) =>
+                          this.setState({
+                            exchange: {
+                              ...this.state.exchange,
+                              volumeBotDetails: {
+                                ...this.state.exchange.volumeBotDetails,
+                                pair: e.target.value,
+                              },
+                            },
+                          })
+                        }
+                      />
+                    }
+                  />
+                  <div className="u-float-right">
+                    <Button
+                      onClick={() => {
+                        this.props.volumeBotDetails(
+                          this.state.exchange.volumeBotDetails
+                        );
+                      }}
+                    >
+                      Submit
+                    </Button>
+                  </div>
+                </Form>
+              </div>
+            </Card>
+          </Col>
+        </Row>
       </div>
     );
   }
@@ -1050,6 +1120,7 @@ function mapDisptachToProps(dispatch) {
     exchangeCurrencyAdd: (data) => dispatch(actions.ExchangeCurrencyAdd(data)),
     exchangeCurrencyUpdate: (data) =>
       dispatch(actions.ExchangeCurrencyUpdate(data)),
+    volumeBotDetails: (data) => dispatch(actions.VolumeBotDetails(data)),
   };
 }
 

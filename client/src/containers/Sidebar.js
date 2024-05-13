@@ -18,6 +18,7 @@ import {
   faBahai,
   faDollarSign,
   faKey,
+  faSortAmountUp,
 } from "@fortawesome/free-solid-svg-icons";
 
 import SuperAdminComponent from "../components/SuperAdminComponent";
@@ -76,6 +77,15 @@ class Sidebar extends React.Component {
             "/liquidity",
             () => {
               this.setState({ activeLink: "/liquidity" });
+            }
+          )}
+
+          {this.renderRouteButton(
+            "Volume Bot",
+            faSortAmountUp,
+            "/volumebot",
+            () => {
+              this.setState({ activeLink: "/volumebot" });
             }
           )}
 
