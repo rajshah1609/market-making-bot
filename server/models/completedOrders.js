@@ -7,7 +7,6 @@ let completedOrders = new Schema(
     exchange: { type: String, required: true },
     pair: { type: String, required: true },
     type: { type: String, required: true, enum: ["buy", "sell"] },
-    account: { type: String, required: true },
     exchangeId: { type: String, required: true },
     price: { type: Number, required: true, default: 0 },
     usdtPrice: { type: Number, required: true, default: 0 },
