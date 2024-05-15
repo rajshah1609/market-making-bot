@@ -88,9 +88,9 @@ module.exports = {
       return responseData.data;
     } catch (error) {
       if (await isset(error.response)) {
-        logger.error(`lbank_walletBalance_error : `, error.response.data);
+        logger.error(`lbank_placeOrder_error : `, error.response.data);
       } else {
-        logger.error(`lbank_walletBalance_error : `, error);
+        logger.error(`lbank_placeOrder_error : `, error);
       }
       return "error";
     }
@@ -150,9 +150,9 @@ module.exports = {
       return responseData.data;
     } catch (error) {
       if (await isset(error.response)) {
-        logger.error(`lbank_walletBalance_error : `, error.response.data);
+        logger.error(`lbank_orderStatus_error : `, error.response.data);
       } else {
-        logger.error(`lbank_walletBalance_error : `, error);
+        logger.error(`lbank_orderStatus_error : `, error);
       }
       return "error";
     }
@@ -212,9 +212,9 @@ module.exports = {
       return responseData.data;
     } catch (error) {
       if (await isset(error.response)) {
-        logger.error(`lbank_walletBalance_error : `, error.response.data);
+        logger.error(`lbank_cancelOrder_error : `, error.response.data);
       } else {
-        logger.error(`lbank_walletBalance_error : `, error);
+        logger.error(`lbank_canncelOrder_error : `, error);
       }
       return "error";
     }
@@ -291,9 +291,9 @@ module.exports = {
       return orderBookData.data;
     } catch (error) {
       if (await isset(error.response)) {
-        logger.error(`lbank_orderBook_error : `, error.response.data);
+        logger.error(`lbank_ticker24Hr_error : `, error.response.data);
       } else {
-        logger.error(`lbank_orderBook_error : `, error);
+        logger.error(`lbank_ticker24Hr_error : `, error);
       }
       return { asks: [], bids: [] };
     }
