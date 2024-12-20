@@ -17,8 +17,8 @@ module.exports = {
       if (adminLevel == 1)
         emails.push([
           "raj@xinfin.org",
-          "jignesh@comtechgold.com",
-          "ritika@comtechgold.com",
+          "jignesh@comtechglobal.ae",
+          "ritika@comtechglobal.ae ",
         ]);
       else emails.push(["raj@xinfin.org"]);
       if (emails.length <= 0) {
