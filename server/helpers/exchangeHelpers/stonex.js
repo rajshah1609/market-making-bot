@@ -172,6 +172,7 @@ module.exports = {
       const statusData = await axiosHelper.makeGETHeaderRequest(config);
       return statusData.data;
     } catch (error) {
+      logger.error(`stonex_orderStatus_error : `,error);
       if (await isset(error.response)) {
         logger.error(`stonex_orderStatus_error : `, error.response.data);
       } else {

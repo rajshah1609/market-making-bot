@@ -54,11 +54,11 @@ module.exports = {
       const test = req.body.test;
       if (test == process.env.test) {
         const price = req.body.price;
-        const type = req.body.price;
+        const type = req.body.type;
         const amount = req.body.amount;
-        const amountOz = (amountOz = parseFloat(
+        const amountOz =  parseFloat(
           parseFloat(amount / ounceConversion).toFixed(3)
-        ));
+        );
         const priceOz = parseFloat(
           parseFloat(price * ounceConversion).toFixed(2)
         );
@@ -66,14 +66,14 @@ module.exports = {
           parseFloat(amountOz * priceOz).toFixed(4)
         );
         const stonexUsdtTotal = parseFloat(
-          parseFloat(totalQty * price).toFixed(4)
+          parseFloat(amount * price).toFixed(4)
         );
 
         const uniqueId = uuid();
         const orderData = {
           clientId: uniqueId,
           pair: "XAU-USD",
-          type: type,
+          type,
           amount: amountOz,
           price: priceOz,
         };
