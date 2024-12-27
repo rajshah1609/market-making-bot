@@ -118,13 +118,8 @@ module.exports = {
   sendStatsSummary: async () => {
     try {
       let i, j, rowData;
-      let time = new Date();
-      time.setUTCHours(2, 30, 0, 0); // Set specific time
-
-      const statsData = await dailyStats.find({
-        time,
-        exchange: { $ne: "total" },
-      });
+      const startDate = new Date("2024-08-01");
+      const today = new Date();
 
       let workbook = new excel.Workbook();
       workbook.views = [
@@ -141,46 +136,6 @@ module.exports = {
 
       let worksheet = workbook.addWorksheet("Sheet 1");
 
-      // Fix the 1st row headers dynamically
-      // worksheet.mergeCells("B1:C1");
-      // worksheet.getCell("B1").value = "Bitrue";
-      // worksheet.getCell("B1").alignment = {
-      //   horizontal: "center",
-      //   vertical: "middle",
-      // };
-
-      // worksheet.mergeCells("E1:F1");
-      // worksheet.getCell("E1").value = "Bitmart";
-      // worksheet.getCell("E1").alignment = {
-      //   horizontal: "center",
-      //   vertical: "middle",
-      // };
-
-      // worksheet.mergeCells("H1:I1");
-      // worksheet.getCell("H1").value = "LBank";
-      // worksheet.getCell("H1").alignment = {
-      //   horizontal: "center",
-      //   vertical: "middle",
-      // };
-
-      // Add the second row (subheaders)
-      // worksheet.getRow(2).values = [
-      //   "Date",
-      //   "USDT",
-      //   "CGO",
-      //   "",
-      //   "USDT",
-      //   "CGO",
-      //   "",
-      //   "USDT",
-      //   "CGO",
-      // ];
-      // worksheet.getRow(2).alignment = {
-      //   horizontal: "center",
-      //   vertical: "middle",
-      // };
-
-      // Define column properties
       worksheet.columns = [
         { header: "Date", key: "date", width: 15 },
         { header: "Bitrue USDT", key: "bitrueUSDT", width: 15 },
@@ -192,52 +147,63 @@ module.exports = {
         { header: "Lbank USDT", key: "lbankUSDT", width: 15 },
         { header: "Lbank CGO", key: "lbankCGO", width: 15 },
       ];
-      // Populate row data dynamically
-      rowData = {
-        date: new Date().toLocaleDateString(), // Add current date
-        bitrueUSDT: "",
-        bitrueCGO: "",
-        bitmartUSDT: "",
-        bitmartCGO: "",
-        lbankUSDT: "",
-        lbankCGO: "",
-      };
 
-      // Initialize rowData and populate dynamically
-      for (i = 0; i < statsData.length; i++) {
-        const exchange = statsData[i].exchange; // Current exchange
-        const stats = statsData[i].stats; // Stats array
+      let currentDate = startDate;
+      while (currentDate <= today) {
+        let time = new Date(currentDate);
+        time.setUTCHours(2, 30, 0, 0);
 
-        for (j = 0; j < stats.length; j++) {
-          const currency = stats[j].currency; // Assuming `currency` is in the stats array
-          const todayBalance = stats[j].todayBalance; // Balance for today
+        const statsData = await dailyStats.find({
+          time,
+          exchange: { $ne: "total" },
+        });
 
-          if (currency === "USDT") {
-            if (exchange === "bitrue") rowData.bitrueUSDT = todayBalance;
-            else if (exchange === "bitmart") rowData.bitmartUSDT = todayBalance;
-            else if (exchange === "lbank") rowData.lbankUSDT = todayBalance;
-          } else if (currency === "CGO") {
-            if (exchange === "bitrue") rowData.bitrueCGO = todayBalance;
-            else if (exchange === "bitmart") rowData.bitmartCGO = todayBalance;
-            else if (exchange === "lbank") rowData.lbankCGO = todayBalance;
+        rowData = {
+          date: currentDate.toLocaleDateString(),
+          bitrueUSDT: "",
+          bitrueCGO: "",
+          bitmartUSDT: "",
+          bitmartCGO: "",
+          lbankUSDT: "",
+          lbankCGO: "",
+        };
+
+        for (i = 0; i < statsData.length; i++) {
+          const exchange = statsData[i].exchange;
+          const stats = statsData[i].stats;
+
+          for (j = 0; j < stats.length; j++) {
+            const currency = stats[j].currency;
+            const todayBalance = stats[j].todayBalance;
+
+            if (currency === "USDT") {
+              if (exchange === "bitrue") rowData.bitrueUSDT = todayBalance;
+              else if (exchange === "bitmart")
+                rowData.bitmartUSDT = todayBalance;
+              else if (exchange === "lbank") rowData.lbankUSDT = todayBalance;
+            } else if (currency === "CGO") {
+              if (exchange === "bitrue") rowData.bitrueCGO = todayBalance;
+              else if (exchange === "bitmart")
+                rowData.bitmartCGO = todayBalance;
+              else if (exchange === "lbank") rowData.lbankCGO = todayBalance;
+            }
           }
         }
-      }
-      // Add the populated rowData to the worksheet
-      worksheet.addRow(rowData);
 
-      // Save the workbook to a file
-      // await workbook.xlsx.writeFile("daily_stats.xlsx");
-      console.log("Excel file created successfully!");
+        worksheet.addRow(rowData);
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
 
       const filename =
-        time.getDate() +
+        today.getDate() +
         "/" +
-        (time.getMonth() + 1) +
+        (today.getMonth() + 1) +
         "/" +
-        time.getFullYear() +
+        today.getFullYear() +
         "_balance_report.xlsx";
       let tempfilePath = tempfile(".xlsx");
+
       workbook.xlsx.writeFile(tempfilePath).then(async function () {
         let attachments = [
           {
@@ -245,13 +211,12 @@ module.exports = {
             path: tempfilePath,
           },
         ];
-        // const emails = await commonHelper.getEmailsForMail(1);
         const emails = ["raj@xinfin.org"];
         await mail.send(
           emails,
           "Crypbot Daily Balance Summary Mail",
-          "Hello, \n Please find the attached excel sheet for the daily balance summary calculated at : " +
-            time,
+          "Hello, \n Please find the attached excel sheet for the daily balance summary calculated for the range: 2024-08-01 to " +
+            today.toLocaleDateString(),
           attachments
         );
       });
