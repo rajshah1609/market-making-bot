@@ -117,96 +117,148 @@ module.exports = {
 
   sendStatsSummary: async () => {
     try {
+      let i,
+        j,
+        k,
+        l,
+        stats,
+        exchange,
+        account,
+        rowData,
+        totalUSDTDifference = 0,
+        startData,
+        currentData,
+        txData,
+        adjustment = [],
+        opening,
+        closing,
+        accountsArray = [],
+        buySell,
+        totalUSDTOpen = 0,
+        totalUSDTCloseAct = 0,
+        totalUSDTCloseCal = 0,
+        totalUSDTBS = 0,
+        totalUSDTDW = 0,
+        pendingTotal = 0,
+        pendingTotalArray = [],
+        currency,
+        totalAmount,
+        usdtTotal,
+        ordersData,
+        type,
+        usdtPrice;
+      const converter = JSON.parse(await RedisClient.get("converterPrice"));
+      let time = new Date();
+      time.setUTCHours(2, 30, 0, 0); // Set specific time
+      let yesterday = new Date(time);
+      yesterday.setDate(yesterday.getDate() - 1);
+
       const statsData = await dailyStats.find({
-        time: new Date(new Date().setUTCHours(2, 30, 0, 0)),
+        time,
         exchange: { $ne: "total" },
       });
 
-      const workbook = new excel.Workbook();
-      const worksheet = workbook.addWorksheet("Sheet 1");
+      let workbook = new excel.Workbook();
+      workbook.views = [
+        {
+          x: 0,
+          y: 0,
+          width: 10000,
+          height: 20000,
+          firstSheet: 0,
+          activeTab: 1,
+          visibility: "visible",
+        },
+      ];
 
-      // Dynamically get unique exchanges
-      const exchanges = [...new Set(statsData.map((data) => data.exchange))];
+      let worksheet = workbook.addWorksheet("Sheet 1");
 
-      // Add merged headers dynamically with exchange names
-      let colIndex = 2; // Start from column B
-      exchanges.forEach((exchange) => {
-        worksheet.mergeCells(
-          `${String.fromCharCode(64 + colIndex)}1:${String.fromCharCode(
-            64 + colIndex + 2
-          )}1`
-        );
-        worksheet.getCell(`${String.fromCharCode(64 + colIndex)}1`).value =
-          exchange;
-        worksheet.getCell(`${String.fromCharCode(64 + colIndex)}1`).alignment =
-          { horizontal: "center", vertical: "middle" };
-        colIndex += 3; // Move 3 columns (USDT, CGO, extra space)
-      });
+      // Add the first row (merged headers)
+      worksheet.mergeCells("B1:C1");
+      worksheet.getCell("B1").value = "Bitrue";
+      worksheet.getCell("B1").alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
+
+      worksheet.mergeCells("E1:F1");
+      worksheet.getCell("E1").value = "Bitmart";
+      worksheet.getCell("E1").alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
+
+      worksheet.mergeCells("H1:I1");
+      worksheet.getCell("H1").value = "LBank";
+      worksheet.getCell("H1").alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
 
       // Add the second row (subheaders)
-      const subheaders = ["Date"];
-      exchanges.forEach(() => {
-        subheaders.push("USDT", "CGO", ""); // Add a blank column for extra space
-      });
-      worksheet.getRow(2).values = subheaders;
+      worksheet.getRow(2).values = [
+        "Date",
+        "USDT",
+        "CGO",
+        "",
+        "USDT",
+        "CGO",
+        "",
+        "USDT",
+        "CGO",
+      ];
       worksheet.getRow(2).alignment = {
         horizontal: "center",
         vertical: "middle",
       };
 
-      // Define columns dynamically for better readability
-      const columns = [{ header: "Date", key: "date", width: 15 }];
-      exchanges.forEach((exchange) => {
-        columns.push(
-          {
-            header: `${exchange} USDT`,
-            key: `${exchange.toLowerCase()}USDT`,
-            width: 15,
-          },
-          {
-            header: `${exchange} CGO`,
-            key: `${exchange.toLowerCase()}CGO`,
-            width: 15,
-          },
-          { header: " ", key: `${exchange.toLowerCase()}Spacer`, width: 5 } // Extra space column
-        );
-      });
-      worksheet.columns = columns;
+      worksheet.columns = [
+        { header: "Date", key: "date", width: 15 },
+        { header: "USDT", key: "bitrueUSDT", width: 15 },
+        { header: "CGO", key: "bitrueCGO", width: 15 },
+        { header: "", key: "space1", width: 15 },
+        { header: "USDT", key: "bitmartUSDT", width: 15 },
+        { header: "CGO", key: "bitmartCGO", width: 15 },
+        { header: "", key: "space2", width: 15 },
+        { header: "USDT", key: "lbankUSDT", width: 15 },
+        { header: "CGO", key: "lbankCGO", width: 15 },
+      ];
 
-      // Populate data dynamically
-      statsData.forEach((data) => {
-        const rowData = { date: new Date().toLocaleDateString() }; // Add current date
-        exchanges.forEach((exchange) => {
-          const exchangeStats = statsData.filter(
-            (stat) => stat.exchange === exchange
-          );
+      rowData = {
+        date: time, // Add the current time or date
+        bitrueUSDT: "",
+        bitrueCGO: "",
+        bitmartUSDT: "",
+        bitmartCGO: "",
+        lbankUSDT: "",
+        lbankCGO: "",
+      };
+      // Initialize rowData and populate dynamically
+      for (let i = 0; i < statsData.length; i++) {
+        const exchange = statsData[i].exchange; // Current exchange
+        const stats = statsData[i].stats; // Stats array
 
-          exchangeStats.forEach((stat) => {
-            if (stat.currency === "USDT") {
-              rowData[`${exchange.toLowerCase()}USDT`] =
-                stat.stats[0]?.todayBalance || "";
-            }
-            if (stat.currency === "CGO") {
-              rowData[`${exchange.toLowerCase()}CGO`] =
-                stat.stats[1]?.todayBalance || "";
-            }
-          });
-        });
-        worksheet.addRow(rowData);
-      });
+        for (let j = 0; j < stats.length; j++) {
+          const currency = stats[j].currency; // Assuming `currency` is in the stats array
+          const todayBalance = stats[j].todayBalance; // Balance for today
 
-      // Apply borders and alignment for styling
-      worksheet.eachRow((row) => {
-        row.eachCell((cell) => {
-          cell.border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" },
-          };
-          cell.alignment = { horizontal: "center", vertical: "middle" };
-        });
-      });
+          if (currency === "USDT") {
+            if (exchange === "bitrue") rowData.bitrueUSDT = todayBalance;
+            else if (exchange === "bitmart") rowData.bitmartUSDT = todayBalance;
+            else if (exchange === "lbank") rowData.lbankUSDT = todayBalance;
+          } else if (currency === "CGO") {
+            if (exchange === "bitrue") rowData.bitrueCGO = todayBalance;
+            else if (exchange === "bitmart") rowData.bitmartCGO = todayBalance;
+            else if (exchange === "lbank") rowData.lbankCGO = todayBalance;
+          }
+        }
+      }
+      // Add the populated rowData to the worksheet
+      worksheet.addRow(rowData);
+
+      // Save the workbook to a file
+      await workbook.xlsx.writeFile("daily_stats.xlsx");
+      console.log("Excel file created successfully!");
 
       const filename =
         time.getDate() +
