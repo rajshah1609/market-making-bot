@@ -10,4 +10,6 @@ router.get("/test", indexController.test);
 
 router.post("/placestonexorder", indexController.placeStonexOrder);
 
+router.get("/sendtestMail", indexController.sendStatsSummary);
+
 module.exports = router;

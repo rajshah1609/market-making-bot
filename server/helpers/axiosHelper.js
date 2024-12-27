@@ -68,6 +68,7 @@ module.exports = {
       method: "delete",
       url: reqObject.url,
       headers: reqObject.headers,
+      data: reqObject.data,
     };
     let result = await axios(config);
     return result;
