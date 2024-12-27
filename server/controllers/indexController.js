@@ -117,41 +117,9 @@ module.exports = {
 
   sendStatsSummary: async () => {
     try {
-      let i,
-        j,
-        k,
-        l,
-        stats,
-        exchange,
-        account,
-        rowData,
-        totalUSDTDifference = 0,
-        startData,
-        currentData,
-        txData,
-        adjustment = [],
-        opening,
-        closing,
-        accountsArray = [],
-        buySell,
-        totalUSDTOpen = 0,
-        totalUSDTCloseAct = 0,
-        totalUSDTCloseCal = 0,
-        totalUSDTBS = 0,
-        totalUSDTDW = 0,
-        pendingTotal = 0,
-        pendingTotalArray = [],
-        currency,
-        totalAmount,
-        usdtTotal,
-        ordersData,
-        type,
-        usdtPrice;
-      const converter = JSON.parse(await RedisClient.get("converterPrice"));
+      let i, j, rowData;
       let time = new Date();
       time.setUTCHours(2, 30, 0, 0); // Set specific time
-      let yesterday = new Date(time);
-      yesterday.setDate(yesterday.getDate() - 1);
 
       const statsData = await dailyStats.find({
         time,
@@ -173,7 +141,7 @@ module.exports = {
 
       let worksheet = workbook.addWorksheet("Sheet 1");
 
-      // Add the first row (merged headers)
+      // Fix the 1st row headers dynamically
       worksheet.mergeCells("B1:C1");
       worksheet.getCell("B1").value = "Bitrue";
       worksheet.getCell("B1").alignment = {
@@ -194,38 +162,40 @@ module.exports = {
         horizontal: "center",
         vertical: "middle",
       };
-
+      worksheet.addRow();
       // Add the second row (subheaders)
-      worksheet.getRow(2).values = [
-        "Date",
-        "USDT",
-        "CGO",
-        "",
-        "USDT",
-        "CGO",
-        "",
-        "USDT",
-        "CGO",
-      ];
-      worksheet.getRow(2).alignment = {
-        horizontal: "center",
-        vertical: "middle",
-      };
+      // worksheet.getRow(2).values = [
+      //   "Date",
+      //   "USDT",
+      //   "CGO",
+      //   "",
+      //   "USDT",
+      //   "CGO",
+      //   "",
+      //   "USDT",
+      //   "CGO",
+      // ];
+      // worksheet.getRow(2).alignment = {
+      //   horizontal: "center",
+      //   vertical: "middle",
+      // };
 
+      // Define column properties
       worksheet.columns = [
         { header: "Date", key: "date", width: 15 },
         { header: "USDT", key: "bitrueUSDT", width: 15 },
         { header: "CGO", key: "bitrueCGO", width: 15 },
-        { header: "", key: "space1", width: 15 },
+        { header: "", key: "space1", width: 5 },
         { header: "USDT", key: "bitmartUSDT", width: 15 },
         { header: "CGO", key: "bitmartCGO", width: 15 },
-        { header: "", key: "space2", width: 15 },
+        { header: "", key: "space2", width: 5 },
         { header: "USDT", key: "lbankUSDT", width: 15 },
         { header: "CGO", key: "lbankCGO", width: 15 },
       ];
-
+      worksheet.addRow();
+      // Populate row data dynamically
       rowData = {
-        date: time, // Add the current time or date
+        date: new Date().toLocaleDateString(), // Add current date
         bitrueUSDT: "",
         bitrueCGO: "",
         bitmartUSDT: "",
@@ -233,12 +203,13 @@ module.exports = {
         lbankUSDT: "",
         lbankCGO: "",
       };
+
       // Initialize rowData and populate dynamically
-      for (let i = 0; i < statsData.length; i++) {
+      for (i = 0; i < statsData.length; i++) {
         const exchange = statsData[i].exchange; // Current exchange
         const stats = statsData[i].stats; // Stats array
 
-        for (let j = 0; j < stats.length; j++) {
+        for (j = 0; j < stats.length; j++) {
           const currency = stats[j].currency; // Assuming `currency` is in the stats array
           const todayBalance = stats[j].todayBalance; // Balance for today
 
@@ -257,7 +228,7 @@ module.exports = {
       worksheet.addRow(rowData);
 
       // Save the workbook to a file
-      await workbook.xlsx.writeFile("daily_stats.xlsx");
+      // await workbook.xlsx.writeFile("daily_stats.xlsx");
       console.log("Excel file created successfully!");
 
       const filename =
