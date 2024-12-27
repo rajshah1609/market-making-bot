@@ -148,7 +148,6 @@ module.exports = {
         type,
         usdtPrice;
       const converter = JSON.parse(await RedisClient.get("converterPrice"));
-
       let time = new Date();
       time.setUTCHours(2, 30, 0, 0); // Set specific time
       let yesterday = new Date(time);
@@ -160,25 +159,37 @@ module.exports = {
       });
 
       let workbook = new excel.Workbook();
+      workbook.views = [
+        {
+          x: 0,
+          y: 0,
+          width: 10000,
+          height: 20000,
+          firstSheet: 0,
+          activeTab: 1,
+          visibility: "visible",
+        },
+      ];
+
       let worksheet = workbook.addWorksheet("Sheet 1");
 
-      // Add merged headers
+      // Add the first row (merged headers)
       worksheet.mergeCells("B1:C1");
-      worksheet.getCell("B1").value = "CGO";
+      worksheet.getCell("B1").value = "Bitrue";
       worksheet.getCell("B1").alignment = {
         horizontal: "center",
         vertical: "middle",
       };
 
       worksheet.mergeCells("D1:E1");
-      worksheet.getCell("D1").value = "CGO";
+      worksheet.getCell("D1").value = "Bitmart";
       worksheet.getCell("D1").alignment = {
         horizontal: "center",
         vertical: "middle",
       };
 
       worksheet.mergeCells("F1:G1");
-      worksheet.getCell("F1").value = "CGO";
+      worksheet.getCell("F1").value = "LBank";
       worksheet.getCell("F1").alignment = {
         horizontal: "center",
         vertical: "middle",
@@ -199,46 +210,49 @@ module.exports = {
         vertical: "middle",
       };
 
-      // Initialize columns for dynamic data
       worksheet.columns = [
         { header: "Date", key: "date", width: 15 },
-        { header: "USDT", key: "cgoUSDT1", width: 15 },
-        { header: "CGO", key: "cgoCGO1", width: 15 },
-        { header: "USDT", key: "cgoUSDT2", width: 15 },
-        { header: "CGO", key: "cgoCGO2", width: 15 },
-        { header: "USDT", key: "cgoUSDT3", width: 15 },
-        { header: "CGO", key: "cgoCGO3", width: 15 },
+        { header: "USDT", key: "bitrueUSDT", width: 15 },
+        { header: "CGO", key: "bitrueCGO", width: 15 },
+        { header: "USDT", key: "bitmartUSDT", width: 15 },
+        { header: "CGO", key: "bitmartCGO", width: 15 },
+        { header: "USDT", key: "lbankUSDT", width: 15 },
+        { header: "CGO", key: "lbankCGO", width: 15 },
       ];
 
-      // Process and add rows dynamically
-      statsData.forEach((data) => {
-        const row = {
-          date: data.time.toLocaleDateString(), // Format date as MM/DD/YYYY
-          cgoUSDT1: data.stats[0]?.todayBalance || "", // Replace with actual logic for USDT
-          cgoCGO1: data.stats[1]?.todayBalance || "", // Replace with actual logic for CGO
-          cgoUSDT2: data.stats[2]?.todayBalance || "",
-          cgoCGO2: data.stats[3]?.todayBalance || "",
-          cgoUSDT3: data.stats[4]?.todayBalance || "",
-          cgoCGO3: data.stats[5]?.todayBalance || "",
-        };
+      rowData = {
+        date: time, // Add the current time or date
+        bitrueUSDT: "",
+        bitrueCGO: "",
+        bitmartUSDT: "",
+        bitmartCGO: "",
+        lbankUSDT: "",
+        lbankCGO: "",
+      };
+      // Initialize rowData and populate dynamically
+      for (let i = 0; i < statsData.length; i++) {
+        const exchange = statsData[i].exchange; // Current exchange
+        const stats = statsData[i].stats; // Stats array
 
-        worksheet.addRow(row);
-      });
+        for (let j = 0; j < stats.length; j++) {
+          const currency = stats[j].currency; // Assuming `currency` is in the stats array
+          const todayBalance = stats[j].todayBalance; // Balance for today
 
-      // Apply borders and alignment for better formatting
-      worksheet.eachRow((row, rowNumber) => {
-        row.eachCell((cell) => {
-          cell.border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" },
-          };
-          cell.alignment = { horizontal: "center", vertical: "middle" };
-        });
-      });
+          if (currency === "USDT") {
+            if (exchange === "bitrue") rowData.bitrueUSDT = todayBalance;
+            else if (exchange === "bitmart") rowData.bitmartUSDT = todayBalance;
+            else if (exchange === "lbank") rowData.lbankUSDT = todayBalance;
+          } else if (currency === "CGO") {
+            if (exchange === "bitrue") rowData.bitrueCGO = todayBalance;
+            else if (exchange === "bitmart") rowData.bitmartCGO = todayBalance;
+            else if (exchange === "lbank") rowData.lbankCGO = todayBalance;
+          }
+        }
+      }
+      // Add the populated rowData to the worksheet
+      worksheet.addRow(rowData);
 
-      // Save the workbook
+      // Save the workbook to a file
       await workbook.xlsx.writeFile("daily_stats.xlsx");
       console.log("Excel file created successfully!");
 
