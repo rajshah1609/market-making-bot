@@ -13,10 +13,13 @@ const {
   last24HrVolume,
   GetMaxMinPrice,
 } = require("../helpers/orderPlacement");
+const dailyStats = require("../models/dailyStats");
 const externalExchangeOrders = require("../models/externalExchangeOrders");
 const { RedisClient } = require("../services/redis");
 const cronController = require("./cronController");
 const uuid = require("uuid").v4;
+const excel = require("exceljs");
+const tempfile = require("tempfile");
 
 module.exports = {
   getUSDRates: async (req, res) => {
@@ -109,6 +112,180 @@ module.exports = {
     } catch (error) {
       logger.error(`indexController_placeStonexOrder_error`, error);
       return responseHelper.serverError(res, error);
+    }
+  },
+
+  sendStatsSummary: async () => {
+    try {
+      let i,
+        j,
+        k,
+        l,
+        stats,
+        exchange,
+        account,
+        rowData,
+        totalUSDTDifference = 0,
+        startData,
+        currentData,
+        txData,
+        adjustment = [],
+        opening,
+        closing,
+        accountsArray = [],
+        buySell,
+        totalUSDTOpen = 0,
+        totalUSDTCloseAct = 0,
+        totalUSDTCloseCal = 0,
+        totalUSDTBS = 0,
+        totalUSDTDW = 0,
+        pendingTotal = 0,
+        pendingTotalArray = [],
+        currency,
+        totalAmount,
+        usdtTotal,
+        ordersData,
+        type,
+        usdtPrice;
+      const converter = JSON.parse(await RedisClient.get("converterPrice"));
+      let time = new Date();
+      time.setUTCHours(2, 30, 0, 0); // Set specific time
+      let yesterday = new Date(time);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const statsData = await dailyStats.find({
+        time,
+        exchange: { $ne: "total" },
+      });
+
+      let workbook = new excel.Workbook();
+      workbook.views = [
+        {
+          x: 0,
+          y: 0,
+          width: 10000,
+          height: 20000,
+          firstSheet: 0,
+          activeTab: 1,
+          visibility: "visible",
+        },
+      ];
+
+      let worksheet = workbook.addWorksheet("Sheet 1");
+
+      // Add the first row (merged headers)
+      worksheet.mergeCells("B1:C1");
+      worksheet.getCell("B1").value = "Bitrue";
+      worksheet.getCell("B1").alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
+
+      worksheet.mergeCells("D1:E1");
+      worksheet.getCell("D1").value = "Bitmart";
+      worksheet.getCell("D1").alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
+
+      worksheet.mergeCells("F1:G1");
+      worksheet.getCell("F1").value = "LBank";
+      worksheet.getCell("F1").alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
+
+      // Add the second row (subheaders)
+      worksheet.getRow(2).values = [
+        "Date",
+        "USDT",
+        "CGO",
+        "USDT",
+        "CGO",
+        "USDT",
+        "CGO",
+      ];
+      worksheet.getRow(2).alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
+
+      worksheet.columns = [
+        { header: "Date", key: "date", width: 15 },
+        { header: "USDT", key: "bitrueUSDT", width: 15 },
+        { header: "CGO", key: "bitrueCGO", width: 15 },
+        { header: "USDT", key: "bitmartUSDT", width: 15 },
+        { header: "CGO", key: "bitmartCGO", width: 15 },
+        { header: "USDT", key: "lbankUSDT", width: 15 },
+        { header: "CGO", key: "lbankCGO", width: 15 },
+      ];
+
+      // Initialize rowData and populate dynamically
+      for (let i = 0; i < statsData.length; i++) {
+        const exchange = statsData[i].exchange; // Current exchange
+        const stats = statsData[i].stats; // Stats array
+
+        let rowData = {
+          date: time, // Add the current time or date
+          bitrueUSDT: "",
+          bitrueCGO: "",
+          bitmartUSDT: "",
+          bitmartCGO: "",
+          lbankUSDT: "",
+          lbankCGO: "",
+        };
+
+        for (let j = 0; j < stats.length; j++) {
+          const currency = stats[j].currency; // Assuming `currency` is in the stats array
+          const todayBalance = stats[j].todayBalance; // Balance for today
+
+          if (currency === "USDT") {
+            if (exchange === "bitrue") rowData.bitrueUSDT = todayBalance;
+            else if (exchange === "bitmart") rowData.bitmartUSDT = todayBalance;
+            else if (exchange === "lbank") rowData.lbankUSDT = todayBalance;
+          } else if (currency === "CGO") {
+            if (exchange === "bitrue") rowData.bitrueCGO = todayBalance;
+            else if (exchange === "bitmart") rowData.bitmartCGO = todayBalance;
+            else if (exchange === "lbank") rowData.lbankCGO = todayBalance;
+          }
+        }
+
+        // Add the populated rowData to the worksheet
+        worksheet.addRow(rowData);
+      }
+
+      // Save the workbook to a file
+      await workbook.xlsx.writeFile("daily_stats.xlsx");
+      console.log("Excel file created successfully!");
+
+      const filename =
+        time.getDate() +
+        "/" +
+        (time.getMonth() + 1) +
+        "/" +
+        time.getFullYear() +
+        "_balance_report.xlsx";
+      let tempfilePath = tempfile(".xlsx");
+      workbook.xlsx.writeFile(tempfilePath).then(async function () {
+        let attachments = [
+          {
+            filename: filename,
+            path: tempfilePath,
+          },
+        ];
+        // const emails = await commonHelper.getEmailsForMail(1);
+        const emails = ["raj@xinfin.org"];
+        await mail.send(
+          emails,
+          "Crypbot Daily Balance Summary Mail",
+          "Hello, \n Please find the attached excel sheet for the daily balance summary calculated at : " +
+            time,
+          attachments
+        );
+      });
+    } catch (error) {
+      logger.error(`cronController_sendStatsMail_error : `, error);
+      return "error";
     }
   },
 };
