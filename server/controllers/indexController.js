@@ -142,27 +142,27 @@ module.exports = {
       let worksheet = workbook.addWorksheet("Sheet 1");
 
       // Fix the 1st row headers dynamically
-      worksheet.mergeCells("B1:C1");
-      worksheet.getCell("B1").value = "Bitrue";
-      worksheet.getCell("B1").alignment = {
-        horizontal: "center",
-        vertical: "middle",
-      };
+      // worksheet.mergeCells("B1:C1");
+      // worksheet.getCell("B1").value = "Bitrue";
+      // worksheet.getCell("B1").alignment = {
+      //   horizontal: "center",
+      //   vertical: "middle",
+      // };
 
-      worksheet.mergeCells("E1:F1");
-      worksheet.getCell("E1").value = "Bitmart";
-      worksheet.getCell("E1").alignment = {
-        horizontal: "center",
-        vertical: "middle",
-      };
+      // worksheet.mergeCells("E1:F1");
+      // worksheet.getCell("E1").value = "Bitmart";
+      // worksheet.getCell("E1").alignment = {
+      //   horizontal: "center",
+      //   vertical: "middle",
+      // };
 
-      worksheet.mergeCells("H1:I1");
-      worksheet.getCell("H1").value = "LBank";
-      worksheet.getCell("H1").alignment = {
-        horizontal: "center",
-        vertical: "middle",
-      };
-      worksheet.addRow();
+      // worksheet.mergeCells("H1:I1");
+      // worksheet.getCell("H1").value = "LBank";
+      // worksheet.getCell("H1").alignment = {
+      //   horizontal: "center",
+      //   vertical: "middle",
+      // };
+
       // Add the second row (subheaders)
       // worksheet.getRow(2).values = [
       //   "Date",
@@ -183,16 +183,15 @@ module.exports = {
       // Define column properties
       worksheet.columns = [
         { header: "Date", key: "date", width: 15 },
-        { header: "USDT", key: "bitrueUSDT", width: 15 },
-        { header: "CGO", key: "bitrueCGO", width: 15 },
+        { header: "Bitrue USDT", key: "bitrueUSDT", width: 15 },
+        { header: "Bitrue CGO", key: "bitrueCGO", width: 15 },
         { header: "", key: "space1", width: 5 },
-        { header: "USDT", key: "bitmartUSDT", width: 15 },
-        { header: "CGO", key: "bitmartCGO", width: 15 },
+        { header: "Bitmart USDT", key: "bitmartUSDT", width: 15 },
+        { header: "Bitmart CGO", key: "bitmartCGO", width: 15 },
         { header: "", key: "space2", width: 5 },
-        { header: "USDT", key: "lbankUSDT", width: 15 },
-        { header: "CGO", key: "lbankCGO", width: 15 },
+        { header: "Lbank USDT", key: "lbankUSDT", width: 15 },
+        { header: "Lbank CGO", key: "lbankCGO", width: 15 },
       ];
-      worksheet.addRow();
       // Populate row data dynamically
       rowData = {
         date: new Date().toLocaleDateString(), // Add current date
