@@ -5,17 +5,17 @@ const qs = require("querystring");
 module.exports = {
   orderBook: async (pair) => {
     try {
-      const orderBookURL = `https://api-cloud.bitmart.com/spot/v1/symbols/book?symbol=${convertPairForExchange(
+      const orderBookURL = `https://api-cloud.bitmart.com/spot/quotation/v3/books?symbol=${convertPairForExchange(
         pair
-      )}`;
+      )}&limit=20`;
       const config = {
         url: orderBookURL,
         contentType: "application/json",
       };
       const orderBookData = await axiosHelper.makeGETRequest(config);
       const resp = {
-        bids: orderBookData.data.data.buys,
-        asks: orderBookData.data.data.sells,
+        bids: orderBookData.data.data.bids,
+        asks: orderBookData.data.data.asks,
       };
       return resp;
     } catch (error) {
@@ -125,7 +125,7 @@ module.exports = {
       const pair = convertPairForExchange(reqData.pair);
       const orderId = reqData.orderId;
       // const timestamp = new Date().getTime().toString();
-      const url = "https://api-cloud.bitmart.com/spot/v2/cancel_order";
+      const url = "https://api-cloud.bitmart.com/spot/v3/cancel_order";
       const body = {
         symbol: pair,
         order_id: orderId,

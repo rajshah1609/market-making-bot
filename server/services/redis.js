@@ -570,8 +570,8 @@ function parseOrderbook(exchange, book) {
       }
       case "bitmart": {
         return {
-          bid: [parseFloat(book.bid.price), parseFloat(book.bid.amount)],
-          ask: [parseFloat(book.ask.price), parseFloat(book.ask.amount)],
+          bid: [parseFloat(book.bid[0]), parseFloat(book.bid[1])],
+          ask: [parseFloat(book.ask[0]), parseFloat(book.ask[1])],
         };
       }
       case "lbank": {
@@ -670,10 +670,10 @@ function parseCompleteOrderBook(exchange, book) {
       }
       case "bitmart": {
         for (i = 0; i < book.bid.length && i < 10; i++) {
-          bidArray.push([book.bid[i].price, book.bid[i].amount]);
+          bidArray.push([book.bid[i][0], book.bid[i][1]]);
         }
         for (i = 0; i < book.ask.length && i < 10; i++) {
-          askArray.push([book.ask[i].price, book.ask[i].amount]);
+          askArray.push([book.ask[i][0], book.ask[i][1]]);
         }
         return {
           bid: bidArray,

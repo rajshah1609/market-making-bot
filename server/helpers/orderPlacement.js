@@ -249,12 +249,12 @@ exports.GetMaxMinPrice = async (exchange, pair) => {
     bids = orderBookData.bids;
     asks = orderBookData.asks;
     maxPrice = parseFloat(
-      parseFloat(asks[0].price).toFixed(
+      parseFloat(asks[0][0]).toFixed(
         ExchangePairInfo[exchange][pair].decimalsPrice
       )
     );
     minPrice = parseFloat(
-      parseFloat(bids[0].price).toFixed(
+      parseFloat(bids[0][1]).toFixed(
         ExchangePairInfo[exchange][pair].decimalsPrice
       )
     );
