@@ -254,7 +254,7 @@ exports.GetMaxMinPrice = async (exchange, pair) => {
       )
     );
     minPrice = parseFloat(
-      parseFloat(bids[0][1]).toFixed(
+      parseFloat(bids[0][0]).toFixed(
         ExchangePairInfo[exchange][pair].decimalsPrice
       )
     );
@@ -512,17 +512,17 @@ exports.GetOrderStatus = async (exchange, reqData) => {
     if (isNaN(filledQty)) filledQty = 0;
     if (isNaN(fees)) fees = 0;
     feesUSDT = fees * (converter[`${feeCurrency}-USDT`].bid[0] || 0);
-    if (filledQty > 0) {
-      await updateCompletedOrders(reqData, {
-        status,
-        filledQty,
-        fees,
-        feeCurrency,
-        feesUSDT,
-        updatedTotal: filledQty * reqData.price,
-        price: reqData.price,
-      });
-    }
+    // if (filledQty > 0) {
+    //   await updateCompletedOrders(reqData, {
+    //     status,
+    //     filledQty,
+    //     fees,
+    //     feeCurrency,
+    //     feesUSDT,
+    //     updatedTotal: filledQty * reqData.price,
+    //     price: reqData.price,
+    //   });
+    // }
     return {
       status,
       filledQty,
