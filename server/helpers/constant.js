@@ -1,7 +1,7 @@
 /**
  * @constant exchanges list of exchanges which the CrypBot is connected to
  */
-const exchanges = ["bitrue", "bitmart", "lbank"];
+const exchanges = ["bitrue", "bitmart", "lbank", "biconomy"];
 
 exports.Exchanges = exchanges;
 
@@ -56,6 +56,14 @@ let ExchangePairInfo = {
       maxAmount: 5000,
     },
   },
+  biconomy: {
+    "CGO-USDT": {
+      decimalsAmount: 2,
+      decimalsPrice: 4,
+      minAmount: 0.05,
+      maxAmount: 5000,
+    },
+  },
 };
 
 exports.setExchangePairInfo = (data) => {
@@ -94,6 +102,10 @@ const ExchangeCurrencyInfo = {
   lbank: {
     USDT: { exchangeSymbol: "usdt", name: "USD Tether", currencyId: "" },
     CGO: { exchangeSymbol: "cgo", name: "Comtech Gold", currencyId: "" },
+  },
+  biconomy: {
+    USDT: { exchangeSymbol: "USDT", name: "USD Tether", currencyId: "" },
+    CGO: { exchangeSymbol: "CGO", name: "Comtech Gold", currencyId: "" },
   },
 };
 

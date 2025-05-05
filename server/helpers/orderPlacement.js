@@ -18,6 +18,7 @@ const huobi = require("./exchangeHelpers/huobi");
 const exchangeData = require("../models/exchangeData");
 const bitmart = require("./exchangeHelpers/bitmart");
 const lbank = require("./exchangeHelpers/lbank");
+const biconomy = require("./exchangeHelpers/biconomy");
 const ExchangePairInfo = { ...ExchangePairInfoDef };
 
 exports.PlaceOrder = async (exchange, orderData) => {
@@ -108,6 +109,14 @@ exports.PlaceOrder = async (exchange, orderData) => {
       const resp = await lbank.placeOrder(orderData);
       if (resp != "" && resp != "error" && resp != null) {
         orderId = resp.data.order_id;
+      } else {
+        logger.error(exchange, orderData, resp);
+        orderId = "error";
+      }
+    } else if (exchange == "biconomy") {
+      const resp = await biconomy.placeOrder(orderData);
+      if (resp && resp !== "error" && resp != null) {
+        orderId = resp.result.id;
       } else {
         logger.error(exchange, orderData, resp);
         orderId = "error";
@@ -260,6 +269,20 @@ exports.GetMaxMinPrice = async (exchange, pair) => {
     );
   } else if (exchange == "lbank") {
     orderBookData = await lbank.orderBook(pair);
+    bids = orderBookData.bids;
+    asks = orderBookData.asks;
+    maxPrice = parseFloat(
+      parseFloat(asks[0][0]).toFixed(
+        ExchangePairInfo[exchange][pair].decimalsPrice
+      )
+    );
+    minPrice = parseFloat(
+      parseFloat(bids[0][0]).toFixed(
+        ExchangePairInfo[exchange][pair].decimalsPrice
+      )
+    );
+  } else if (exchange == "biconomy") {
+    orderBookData = await biconomy.orderBook(pair);
     bids = orderBookData.bids;
     asks = orderBookData.asks;
     maxPrice = parseFloat(
@@ -506,6 +529,10 @@ exports.GetOrderStatus = async (exchange, reqData) => {
       // fees = feesUSDT = filledQty * reqData.price * 0.0025;
       fees = 0;
       feeCurrency = "USDT";
+    } else if (exchange == "biconomy") {
+      responseData = await biconomy.orderStatus(reqData);
+      filledQty = parseFloat(responseData.result.deal_stock);
+      status = responseData.result.finalStatus;
     }
 
     filledQty = parseFloat(filledQty);
@@ -929,6 +956,37 @@ exports.WalletBalance = async (exchange, accountData) => {
             walletData.push(array);
           }
         }
+      case "biconomy":
+        responseData = await biconomy.walletBalance(accountData);
+        for (i = 0; i < exchangeData.currency.length; i++) {
+          if (
+            Object.keys(responseData.result).includes(
+              exchangeData.currency[i].exchangeSymbol
+            )
+          ) {
+            const data = Object.keys(responseData.result).filter(
+              (e) => e == exchangeData.currency[i].exchangeSymbol
+            )[0];
+            array = {};
+            array.currency = exchangeData.currency[i].symbol;
+            array.balance = parseFloat(responseData.result[data].available);
+            array.inTrade =
+              parseFloat(responseData.result[data].freeze) +
+              parseFloat(responseData.result[data].other_freeze);
+            array.total = array.balance + array.inTrade;
+            array.minBalance =
+              typeof exchangeData.currency[i].minimumBalance !==
+              typeof undefined
+                ? exchangeData.currency[i].minimumBalance
+                : 0;
+            array.minArbBalance =
+              typeof exchangeData.currency[i].minArbBalance !== typeof undefined
+                ? exchangeData.currency[i].minArbBalance
+                : 0;
+            walletData.push(array);
+          }
+        }
+        break;
       default:
         break;
     }
@@ -980,6 +1038,9 @@ exports.CancelOrder = async (exchange, reqData) => {
         break;
       case "lbank":
         await lbank.cancelOrder(reqData);
+      case "biconomy":
+        await biconomy.cancelOrder(reqData);
+        break;
       default:
         break;
     }
