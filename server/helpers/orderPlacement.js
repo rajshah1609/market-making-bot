@@ -956,6 +956,7 @@ exports.WalletBalance = async (exchange, accountData) => {
             walletData.push(array);
           }
         }
+        break;
       case "biconomy":
         responseData = await biconomy.walletBalance(accountData);
         for (i = 0; i < exchangeData.currency.length; i++) {
