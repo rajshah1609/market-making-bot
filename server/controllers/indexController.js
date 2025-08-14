@@ -225,4 +225,9 @@ module.exports = {
       return "error";
     }
   },
+
+  deleteOldData: async (req, res) => {
+    await cronController.deleteOldData();
+    return responseHelper.successWithMessage(res, "Old Data deleted");
+  },
 };

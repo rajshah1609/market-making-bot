@@ -99,3 +99,13 @@ new CronJob(
   true,
   "Asia/Kolkata"
 );
+
+new CronJob(
+  "0 5 * * *",
+  async () => {
+    await cronController.deleteOldData();
+  },
+  null,
+  true,
+  "Asia/Kolkata"
+);

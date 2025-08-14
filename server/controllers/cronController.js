@@ -19,6 +19,8 @@ const {
 const commonHelper = require("../helpers/commonHelper");
 const volumeBotDetailsHelper = require("../helpers/databaseHelpers/volumeBotDetailsHelper");
 const volumeBotOrdersHelper = require("../helpers/databaseHelpers/volumeBotOrdersHelper");
+const volumeBotOrders = require("../models/volumeBotOrders");
+const spreadBotGeneratedOrders = require("../models/spreadBotGeneratedOrders");
 // const { getTotalFees } = require("../helpers/commonHelper");
 let startDate = new Date(Date.UTC(2021, 7, 2, 2, 30, 0, 0));
 
@@ -667,6 +669,49 @@ module.exports = {
     } catch (error) {
       logger.error(`cronController_checkVolumeBots_error : `, error);
       return "error";
+    }
+  },
+
+  deleteOldData: async () => {
+    try {
+      const now = Date.now();
+
+      const volumeResult = await volumeBotOrders.deleteMany({
+        status: { $ne: "active" },
+        createdAt: { $lt: new Date(now - 2 * 24 * 60 * 60 * 1000) },
+      });
+
+      const generatedResult = await spreadBotGeneratedOrders.deleteMany({
+        status: { $ne: "active" },
+        updatedAt: { $lt: new Date(now - 10 * 24 * 60 * 60 * 1000) },
+      });
+
+      const spreadResult = await spreadBotOrders.deleteMany({
+        filledQty: 0,
+        status: { $ne: "active" },
+        updatedAt: { $lt: new Date(now - 10 * 24 * 60 * 60 * 1000) },
+      });
+
+      // Create email body
+      const mailBody = `
+🧹 *Old Orders Cleanup Report* 🧹
+
+✅ volumeBotOrders deleted:          ${volumeResult.deletedCount}
+✅ spreadBotGeneratedOrders deleted: ${generatedResult.deletedCount}
+✅ spreadBotOrders deleted:          ${spreadResult.deletedCount}
+
+🕒 Timestamp: ${new Date().toISOString()}
+`;
+
+      const emails = await commonHelper.getEmailsForMail(2);
+
+      await mail.send(
+        emails,
+        "🧹 Old Orders Cleanup Summary",
+        mailBody.replace(/\n/g, "<br>") // convert text to basic HTML
+      );
+    } catch (error) {
+      logger.error(`cronController_deleteOldData`, error);
     }
   },
 };
