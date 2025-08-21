@@ -12,6 +12,6 @@ router.post("/placestonexorder", indexController.placeStonexOrder);
 
 router.get("/sendtestMail", indexController.sendStatsSummary);
 
-rotuer.get("/deleteolddata", indexController.deleteOldData);
+router.get("/deleteolddata", indexController.deleteOldData);
 
 module.exports = router;
