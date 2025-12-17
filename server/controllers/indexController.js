@@ -1,5 +1,6 @@
 const responseHelper = require("../helpers/RESPONSE");
 const { ounceConversion } = require("../helpers/constant");
+const biconomy = require("../helpers/exchangeHelpers/biconomy");
 const huobi = require("../helpers/exchangeHelpers/huobi");
 const lbank = require("../helpers/exchangeHelpers/lbank");
 const stonex = require("../helpers/exchangeHelpers/stonex");
@@ -46,9 +47,11 @@ module.exports = {
     let account = await GetAccount(reqData.exchange, "AB");
     reqData = { ...reqData, ...account };
     const returnData = await GetOrderStatus("biconomy", reqData);
+    const returnData1 = await biconomy.orderStatus(reqData);
     // await cronController.updateBalance("hourly");
     return responseHelper.successWithData(res, "Done", {
       returnData,
+      returnData1,
     });
   },
 
