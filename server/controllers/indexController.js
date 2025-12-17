@@ -33,8 +33,8 @@ module.exports = {
       type: "sell",
       amount: "0.1",
       pair: "CGO-USDT",
-      exchange: "kucoin",
-      orderId: "8dea4035-7348-4c60-b4c0-ee303bb985cb",
+      exchange: "biconomy",
+      orderId: "133361559373",
       total: 23000000,
       orderType: "LIMIT",
       accountId: "54973543",
@@ -43,9 +43,9 @@ module.exports = {
       // passPhrase: "TradingbotX",
       // memo: "Raj",
     };
-    // let account = await GetAccount(reqData.exchange, "AB");
-    // reqData = { ...reqData, ...account };
-    const returnData = await GetMaxMinPrice("lbank", "CGO-USDT");
+    let account = await GetAccount(reqData.exchange, "AB");
+    reqData = { ...reqData, ...account };
+    const returnData = await GetOrderStatus("biconomy", reqData);
     // await cronController.updateBalance("hourly");
     return responseHelper.successWithData(res, "Done", {
       returnData,
