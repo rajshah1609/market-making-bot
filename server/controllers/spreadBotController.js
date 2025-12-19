@@ -1193,6 +1193,9 @@ module.exports = {
             status: { $ne: "active" },
             externalExchangeId: "pending",
             filledQty: { $gt: 0 },
+            $expr: {
+              $lte: ["$filledQty", "$originalQty"],
+            },
           });
           if (orders.length > 0) {
             let i,
