@@ -177,10 +177,12 @@ module.exports = {
               if (!generatedMarketClosedOrders) {
                 const lastPrice = cgoData.lastPrice;
                 const baseSellPrice = parseFloat(
-                  parseFloat(lastPrice * 1.003).toFixed(6)
+                  // parseFloat(lastPrice * 1.003).toFixed(6)
+                  parseFloat(lastPrice * 1.01).toFixed(6)
                 );
                 const baseBuyPrice = parseFloat(
-                  parseFloat(lastPrice * 0.997).toFixed(6)
+                  // parseFloat(lastPrice * 0.997).toFixed(6)
+                  parseFloat(lastPrice * 0.99).toFixed(6)
                 );
                 for (i = 1; i <= 10; i++) {
                   usdtPrice = parseFloat(
