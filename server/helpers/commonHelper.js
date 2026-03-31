@@ -15,11 +15,7 @@ module.exports = {
       //   emails.push(adminList[i].email);
       // }
       if (adminLevel == 1)
-        emails.push([
-          "raj@xinfin.org",
-          "jignesh@comtechglobal.ae",
-          "ritika@comtechglobal.ae ",
-        ]);
+        emails.push(["raj@xinfin.org", "jignesh@comtechglobal.ae"]);
       else emails.push(["raj@xinfin.org"]);
       if (emails.length <= 0) {
         emails = ["raj@xinfin.org"];
@@ -34,7 +30,7 @@ module.exports = {
   getTotalFees: async function (
     currency = null,
     startTime = null,
-    endTime = null
+    endTime = null,
   ) {
     try {
       if (!currency) currency = "";
@@ -44,7 +40,7 @@ module.exports = {
       const totalFeesArray = await module.exports.getFees(
         currency,
         startTime,
-        endTime
+        endTime,
       );
 
       let totalFees = 0;
