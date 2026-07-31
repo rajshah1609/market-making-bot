@@ -115,8 +115,8 @@ exports.PlaceOrder = async (exchange, orderData) => {
       }
     } else if (exchange == "biconomy") {
       const resp = await biconomy.placeOrder(orderData);
-      if (resp && resp !== "error" && resp != null) {
-        orderId = resp.result.id;
+      if (resp && resp !== "error" && resp.code == 0 && resp.data) {
+        orderId = resp.data.id || resp.data.orderId;
       } else {
         logger.error(exchange, orderData, resp);
         orderId = "error";
@@ -285,13 +285,15 @@ exports.GetMaxMinPrice = async (exchange, pair) => {
     orderBookData = await biconomy.orderBook(pair);
     bids = orderBookData.bids;
     asks = orderBookData.asks;
+    const askPrice = Array.isArray(asks[0]) ? asks[0][0] : (asks[0]?.price || asks[0]);
+    const bidPrice = Array.isArray(bids[0]) ? bids[0][0] : (bids[0]?.price || bids[0]);
     maxPrice = parseFloat(
-      parseFloat(asks[0][0]).toFixed(
+      parseFloat(askPrice).toFixed(
         ExchangePairInfo[exchange][pair].decimalsPrice
       )
     );
     minPrice = parseFloat(
-      parseFloat(bids[0][0]).toFixed(
+      parseFloat(bidPrice).toFixed(
         ExchangePairInfo[exchange][pair].decimalsPrice
       )
     );
@@ -531,8 +533,30 @@ exports.GetOrderStatus = async (exchange, reqData) => {
       feeCurrency = "USDT";
     } else if (exchange == "biconomy") {
       responseData = await biconomy.orderStatus(reqData);
-      filledQty = parseFloat(responseData.result.deal_stock);
-      status = responseData.result.finalStatus;
+      if (responseData && responseData.code == 0 && responseData.data) {
+        const item = responseData.data;
+        filledQty = parseFloat(item.filledAmount || 0);
+        const rawStat = (item.status || "").toUpperCase();
+        if (rawStat === "FILLED" || rawStat === "COMPLETED") {
+          status = "completed";
+        } else if (
+          rawStat === "CANCELLED" ||
+          rawStat === "CANCELED" ||
+          rawStat === "REJECTED"
+        ) {
+          status = "cancelled";
+        } else if (
+          rawStat === "NEW" ||
+          rawStat === "PARTIALLY_FILLED"
+        ) {
+          status = "active";
+        } else {
+          status = "active";
+        }
+      } else {
+        status = reqData.status || "active";
+        filledQty = parseFloat(reqData.filledQty || 0);
+      }
     }
 
     filledQty = parseFloat(filledQty);
@@ -959,32 +983,38 @@ exports.WalletBalance = async (exchange, accountData) => {
         break;
       case "biconomy":
         responseData = await biconomy.walletBalance(accountData);
-        for (i = 0; i < exchangeData.currency.length; i++) {
-          if (
-            Object.keys(responseData.result).includes(
-              exchangeData.currency[i].exchangeSymbol
-            )
-          ) {
-            const data = Object.keys(responseData.result).filter(
-              (e) => e == exchangeData.currency[i].exchangeSymbol
-            )[0];
-            array = {};
-            array.currency = exchangeData.currency[i].symbol;
-            array.balance = parseFloat(responseData.result[data].available);
-            array.inTrade =
-              parseFloat(responseData.result[data].freeze) +
-              parseFloat(responseData.result[data].other_freeze);
-            array.total = array.balance + array.inTrade;
-            array.minBalance =
-              typeof exchangeData.currency[i].minimumBalance !==
-              typeof undefined
-                ? exchangeData.currency[i].minimumBalance
-                : 0;
-            array.minArbBalance =
-              typeof exchangeData.currency[i].minArbBalance !== typeof undefined
-                ? exchangeData.currency[i].minArbBalance
-                : 0;
-            walletData.push(array);
+        if (
+          responseData &&
+          responseData.code === 0 &&
+          Array.isArray(responseData.data)
+        ) {
+          for (i = 0; i < exchangeData.currency.length; i++) {
+            const sym = exchangeData.currency[i].exchangeSymbol;
+            const coinData = responseData.data.find(
+              (e) => (e.coin || e.asset || e.currency) === sym
+            );
+            if (coinData) {
+              array = {};
+              array.currency = exchangeData.currency[i].symbol;
+              array.balance = parseFloat(
+                coinData.available || coinData.free || 0
+              );
+              array.inTrade = parseFloat(
+                coinData.freeze || coinData.locked || 0
+              );
+              array.total = array.balance + array.inTrade;
+              array.minBalance =
+                typeof exchangeData.currency[i].minimumBalance !==
+                typeof undefined
+                  ? exchangeData.currency[i].minimumBalance
+                  : 0;
+              array.minArbBalance =
+                typeof exchangeData.currency[i].minArbBalance !==
+                typeof undefined
+                  ? exchangeData.currency[i].minArbBalance
+                  : 0;
+              walletData.push(array);
+            }
           }
         }
         break;
@@ -1039,6 +1069,7 @@ exports.CancelOrder = async (exchange, reqData) => {
         break;
       case "lbank":
         await lbank.cancelOrder(reqData);
+        break;
       case "biconomy":
         await biconomy.cancelOrder(reqData);
         break;

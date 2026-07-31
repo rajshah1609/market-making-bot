@@ -581,9 +581,24 @@ function parseOrderbook(exchange, book) {
         };
       }
       case "biconomy": {
+        if (!book || !book.bid || !book.ask || !book.bid[0] || !book.ask[0]) {
+          return { bid: [0, 0], ask: [0, 0] };
+        }
+        const bidP = Array.isArray(book.bid[0])
+          ? book.bid[0][0]
+          : book.bid[0].price || book.bid[0];
+        const bidQ = Array.isArray(book.bid[0])
+          ? book.bid[0][1]
+          : book.bid[0].amount || book.bid[0].quantity || 0;
+        const askP = Array.isArray(book.ask[0])
+          ? book.ask[0][0]
+          : book.ask[0].price || book.ask[0];
+        const askQ = Array.isArray(book.ask[0])
+          ? book.ask[0][1]
+          : book.ask[0].amount || book.ask[0].quantity || 0;
         return {
-          bid: [parseFloat(book.bid[0]), parseFloat(book.bid[1])],
-          ask: [parseFloat(book.ask[0]), parseFloat(book.ask[1])],
+          bid: [parseFloat(bidP || 0), parseFloat(bidQ || 0)],
+          ask: [parseFloat(askP || 0), parseFloat(askQ || 0)],
         };
       }
     }
@@ -699,11 +714,25 @@ function parseCompleteOrderBook(exchange, book) {
         };
       }
       case "biconomy": {
-        for (i = 0; i < book.bid.length && i < 10; i++) {
-          bidArray.push([book.bid[i][0], book.bid[i][1]]);
-        }
-        for (i = 0; i < book.ask.length && i < 10; i++) {
-          askArray.push([book.ask[i][0], book.ask[i][1]]);
+        if (book && Array.isArray(book.bid) && Array.isArray(book.ask)) {
+          for (i = 0; i < book.bid.length && i < 10; i++) {
+            const bp = Array.isArray(book.bid[i])
+              ? book.bid[i][0]
+              : book.bid[i].price || book.bid[i];
+            const bq = Array.isArray(book.bid[i])
+              ? book.bid[i][1]
+              : book.bid[i].amount || book.bid[i].quantity || 0;
+            bidArray.push([parseFloat(bp || 0), parseFloat(bq || 0)]);
+          }
+          for (i = 0; i < book.ask.length && i < 10; i++) {
+            const ap = Array.isArray(book.ask[i])
+              ? book.ask[i][0]
+              : book.ask[i].price || book.ask[i];
+            const aq = Array.isArray(book.ask[i])
+              ? book.ask[i][1]
+              : book.ask[i].amount || book.ask[i].quantity || 0;
+            askArray.push([parseFloat(ap || 0), parseFloat(aq || 0)]);
+          }
         }
         return {
           bid: bidArray,
