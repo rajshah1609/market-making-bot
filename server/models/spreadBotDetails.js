@@ -35,5 +35,8 @@ let spreadBotDetails = new Schema(
   }
 );
 
+spreadBotDetails.index({ exchange: 1, pair: 1 });
+spreadBotDetails.index({ status: 1 });
+
 //export the model
 module.exports = mongoose.model("spreadBotDetails", spreadBotDetails);

@@ -533,16 +533,34 @@ exports.GetOrderStatus = async (exchange, reqData) => {
       feeCurrency = "USDT";
     } else if (exchange == "biconomy") {
       responseData = await biconomy.orderStatus(reqData);
-      if (responseData && responseData.code == 0 && responseData.data) {
+      logger.info(`[BICONOMY_DEBUG] GetOrderStatus raw responseData for order ${reqData.orderId}: ${JSON.stringify(responseData)}`);
+      if (
+        responseData &&
+        responseData !== "error" &&
+        (responseData.code == 0 || responseData.code == "0") &&
+        responseData.data
+      ) {
         const item = responseData.data;
-        filledQty = parseFloat(item.filledAmount || 0);
-        const rawStat = (item.status || "").toUpperCase();
+        filledQty = parseFloat(
+          item.filledAmount || item.executedQty || item.deal_stock || item.filledQty || 0
+        );
+        fees = parseFloat(item.fee || item.fees || 0);
+        feeCurrency =
+          item.feeAsset ||
+          item.feeCurrency ||
+          (reqData.pair ? reqData.pair.split("-")[1] : "USDT");
+        const rawStat = String(item.status || "").toUpperCase();
+        logger.info(`[BICONOMY_DEBUG] Order ${reqData.orderId}: rawStat="${rawStat}", filledQty=${filledQty}, fees=${fees}`);
         if (rawStat === "FILLED" || rawStat === "COMPLETED") {
           status = "completed";
+          if (filledQty === 0 && reqData.originalQty) {
+            filledQty = parseFloat(reqData.originalQty);
+          }
         } else if (
           rawStat === "CANCELLED" ||
           rawStat === "CANCELED" ||
-          rawStat === "REJECTED"
+          rawStat === "REJECTED" ||
+          rawStat === "EXPIRED"
         ) {
           status = "cancelled";
         } else if (
@@ -554,6 +572,7 @@ exports.GetOrderStatus = async (exchange, reqData) => {
           status = "active";
         }
       } else {
+        logger.warn(`[BICONOMY_DEBUG] GetOrderStatus failed or returned non-zero code for order ${reqData.orderId}: ${JSON.stringify(responseData)}`);
         status = reqData.status || "active";
         filledQty = parseFloat(reqData.filledQty || 0);
       }

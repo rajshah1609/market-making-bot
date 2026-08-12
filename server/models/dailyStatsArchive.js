@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const dailyStats = new mongoose.Schema(
+const dailyStatsArchive = new mongoose.Schema(
   {
     exchange: String,
     account: String,
@@ -21,7 +21,7 @@ const dailyStats = new mongoose.Schema(
   }
 );
 
-dailyStats.index({ exchange: 1, account: 1, time: 1 });
-dailyStats.index({ time: 1 });
+dailyStatsArchive.index({ exchange: 1, account: 1, time: 1 });
+dailyStatsArchive.index({ time: 1 });
 
-module.exports = mongoose.model("dailyStats", dailyStats);
+module.exports = mongoose.model("dailyStatsArchives", dailyStatsArchive);

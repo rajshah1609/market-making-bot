@@ -22,6 +22,9 @@ let spreadBotOrders = new Schema(
     feesUSDT: { type: Number, default: 0 },
     status: { type: String, required: true, default: "active" },
     cancelling: { type: Boolean, default: false },
+    cancellingSince: { type: Date, default: null },
+    cancellingAttempts: { type: Number, default: 0 },
+    cancelAttempts: { type: Number, default: 0 },
     externalExchangeId: { type: String, default: "pending" },
     refId: { type: String },
   },
@@ -29,6 +32,12 @@ let spreadBotOrders = new Schema(
     timestamps: true,
   }
 );
+
+spreadBotOrders.index({ exchange: 1, pair: 1, status: 1, type: 1 });
+spreadBotOrders.index({ exchange: 1, pair: 1, cancelling: 1 });
+spreadBotOrders.index({ orderId: 1, exchange: 1 });
+spreadBotOrders.index({ mappingId: 1 });
+spreadBotOrders.index({ status: 1, cancelling: 1 });
 
 //export the model
 module.exports = mongoose.model("spreadBotOrders", spreadBotOrders);

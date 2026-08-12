@@ -32,5 +32,10 @@ let completedOrders = new Schema(
   }
 );
 
+completedOrders.index({ exchangeId: 1, exchange: 1 });
+completedOrders.index({ exchange: 1, pair: 1, botType: 1 });
+completedOrders.index({ status: 1 });
+completedOrders.index({ createdAt: -1 });
+
 //export the model
 module.exports = mongoose.model("completedOrders", completedOrders);

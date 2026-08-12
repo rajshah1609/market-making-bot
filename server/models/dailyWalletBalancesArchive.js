@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const dailyWalletBalances = new mongoose.Schema(
+const dailyWalletBalancesArchive = new mongoose.Schema(
   {
     exchange: String,
     account: String,
@@ -19,6 +19,6 @@ const dailyWalletBalances = new mongoose.Schema(
   }
 );
 
-dailyWalletBalances.index({ exchange: 1, account: 1, time: 1 });
+dailyWalletBalancesArchive.index({ exchange: 1, account: 1, time: 1 });
 
-module.exports = mongoose.model("dailyWalletBalances", dailyWalletBalances);
+module.exports = mongoose.model("dailyWalletBalancesArchives", dailyWalletBalancesArchive);

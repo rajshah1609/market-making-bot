@@ -99,7 +99,7 @@ module.exports = {
       const exchangesData = await ExchangeCurrencies.find({});
       for (i = 0; i < exchangesData.length; i++) {
         exchange = exchangesData[i].exchange;
-        (walletData = []), (oldData = ""), (statsArray = []);
+        ((walletData = []), (oldData = ""), (statsArray = []));
         account = await orderPlacement.GetAccount(exchange);
         if (account) {
           walletData = await orderPlacement.WalletBalance(exchange, account);
@@ -135,7 +135,7 @@ module.exports = {
                 $set: {
                   currency: walletData,
                 },
-              }
+              },
             );
           }
 
@@ -192,8 +192,8 @@ module.exports = {
                   stats.todayBalance = walletData[k].total;
                   stats.balanceChange = parseFloat(
                     parseFloat(
-                      stats.todayBalance - stats.yesterdayBalance
-                    ).toFixed(4)
+                      stats.todayBalance - stats.yesterdayBalance,
+                    ).toFixed(4),
                   );
                   if (`${stats.currency}-USDT` in converter)
                     stats.diffUSDT =
@@ -242,7 +242,7 @@ module.exports = {
                 $set: {
                   stats: statsArray,
                 },
-              }
+              },
             );
           }
         }
@@ -274,7 +274,7 @@ module.exports = {
             $set: {
               currency: totalBalancesArray,
             },
-          }
+          },
         );
       }
 
@@ -298,8 +298,8 @@ module.exports = {
               stats.todayBalance = totalBalancesArray[j].total;
               stats.balanceChange = parseFloat(
                 parseFloat(stats.todayBalance - stats.yesterdayBalance).toFixed(
-                  4
-                )
+                  4,
+                ),
               );
               if (`${stats.currency}-USDT` in converter)
                 stats.diffUSDT =
@@ -347,7 +347,7 @@ module.exports = {
             $set: {
               stats: statsArray,
             },
-          }
+          },
         );
       }
     } catch (error) {
@@ -540,7 +540,7 @@ module.exports = {
           totalAmount = Math.abs(totalAmount);
           usdtTotal = Math.abs(usdtTotal);
           usdtPrice = parseFloat(
-            parseFloat(usdtTotal / totalAmount).toFixed(8)
+            parseFloat(usdtTotal / totalAmount).toFixed(8),
           );
           rowData = {
             currency,
@@ -575,7 +575,7 @@ module.exports = {
           "Crypbot Daily Balance Summary Mail",
           "Hello, \n Please find the attached excel sheet for the daily balance summary calculated at : " +
             time,
-          attachments
+          attachments,
         );
       });
     } catch (error) {
@@ -633,12 +633,12 @@ module.exports = {
           if (status == "start") {
             orderData = await volumeBotOrdersHelper.getLastOrder(
               exchange,
-              pair
+              pair,
             );
             if (orderData != "" && orderData != null && orderData != "error") {
               lastOrderTime = new Date(orderData.createdAt);
               difference = parseFloat(
-                parseFloat((currentTime - lastOrderTime) / 1000).toFixed(0)
+                parseFloat((currentTime - lastOrderTime) / 1000).toFixed(0),
               );
               if (difference > maxSeconds) {
                 message =
@@ -663,7 +663,7 @@ module.exports = {
         await mail.send(
           emails,
           "Volume bot has stopped for the following exchange and pair",
-          message
+          message,
         );
       }
     } catch (error) {
@@ -692,6 +692,67 @@ module.exports = {
         updatedAt: { $lt: new Date(now - 10 * 24 * 60 * 60 * 1000) },
       });
 
+      // --- Archiving Logic for 7-day old completed/cancelled orders ---
+      const oneWeekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+      const archiveCondition = {
+        status: { $in: ["completed", "cancelled", "stopped"] },
+        updatedAt: { $lt: oneWeekAgo },
+      };
+
+      // Archive spreadBotOrders
+      await spreadBotOrders
+        .aggregate([
+          { $match: archiveCondition },
+          {
+            $merge: {
+              into: "spreadbotordersarchives",
+              whenMatched: "replace",
+              whenNotMatched: "insert",
+            },
+          },
+        ])
+        .allowDiskUse(true);
+      const spreadArchiveResult =
+        await spreadBotOrders.deleteMany(archiveCondition);
+
+      // --- Archiving Logic for 30-day old Stats and Balances ---
+      const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+      const statsArchiveCondition = { createdAt: { $lt: thirtyDaysAgo } };
+
+      // Archive dailyStats
+      await dailyStats
+        .aggregate([
+          { $match: statsArchiveCondition },
+          {
+            $merge: {
+              into: "dailystatsarchives",
+              whenMatched: "replace",
+              whenNotMatched: "insert",
+            },
+          },
+        ])
+        .allowDiskUse(true);
+      const dailyStatsArchiveResult = await dailyStats.deleteMany(
+        statsArchiveCondition,
+      );
+
+      // Archive dailyWalletBalances
+      await dailyWalletBalances
+        .aggregate([
+          { $match: statsArchiveCondition },
+          {
+            $merge: {
+              into: "dailywalletbalancesarchives",
+              whenMatched: "replace",
+              whenNotMatched: "insert",
+            },
+          },
+        ])
+        .allowDiskUse(true);
+      const walletBalancesArchiveResult = await dailyWalletBalances.deleteMany(
+        statsArchiveCondition,
+      );
+
       // Create email body
       const mailBody = `
 🧹 *Old Orders Cleanup Report* 🧹
@@ -699,6 +760,9 @@ module.exports = {
 ✅ volumeBotOrders deleted:          ${volumeResult.deletedCount}
 ✅ spreadBotGeneratedOrders deleted: ${generatedResult.deletedCount}
 ✅ spreadBotOrders deleted:          ${spreadResult.deletedCount}
+✅ spreadBotOrders archived (7d+):         ${spreadArchiveResult.deletedCount}
+✅ dailyStats archived (30d+):             ${dailyStatsArchiveResult.deletedCount}
+✅ dailyWalletBalances archived (30d+):    ${walletBalancesArchiveResult.deletedCount}
 
 🕒 Timestamp: ${new Date().toISOString()}
 `;
@@ -708,7 +772,7 @@ module.exports = {
       await mail.send(
         emails,
         "🧹 Old Orders Cleanup Summary",
-        mailBody.replace(/\n/g, "<br>") // convert text to basic HTML
+        mailBody.replace(/\n/g, "<br>"), // convert text to basic HTML
       );
     } catch (error) {
       logger.error(`cronController_deleteOldData`, error);

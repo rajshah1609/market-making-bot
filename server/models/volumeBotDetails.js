@@ -29,5 +29,8 @@ let volumeBotDetails = new Schema(
   }
 );
 
+volumeBotDetails.index({ exchange: 1, "details.pair": 1 });
+volumeBotDetails.index({ "details.status": 1 });
+
 //export the model
 module.exports = mongoose.model("volumeBotDetails", volumeBotDetails);

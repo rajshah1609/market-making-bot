@@ -32,15 +32,15 @@ module.exports = {
       const price = await LastTradedPrice(exchange, pair);
       const converter = JSON.parse(await RedisClient.get("converterPrice"));
       const usdtPrice = parseFloat(
-        parseFloat(price * converter[getSecondaryPair(pair)].bid[0]).toFixed(6)
+        parseFloat(price * converter[getSecondaryPair(pair)].bid[0]).toFixed(6),
       );
       const accountData = await GetAccount(exchange);
       const walletBalance = await WalletBalance(exchange, accountData);
       const data1 = walletBalance.filter(
-        (e) => e.currency == pair.split("-")[0]
+        (e) => e.currency == pair.split("-")[0],
       )[0];
       const data2 = walletBalance.filter(
-        (e) => e.currency == pair.split("-")[1]
+        (e) => e.currency == pair.split("-")[1],
       )[0];
       const uniqueId = uuid();
       const newOrder = new spreadBotDetails({
@@ -60,7 +60,7 @@ module.exports = {
         balanceToBeMaintanedC2: parseFloat(data2.total),
         lastSettledAtC1: usdtPrice,
         lastSettledAtC2: parseFloat(
-          parseFloat(converter[getSecondaryPair(pair)].bid[0]).toFixed(6)
+          parseFloat(converter[getSecondaryPair(pair)].bid[0]).toFixed(6),
         ),
       });
       await newOrder.save();
@@ -92,28 +92,28 @@ module.exports = {
             if (arbitrageData) {
               const cgoData = arbitrageData.cgoData;
               const converter = JSON.parse(
-                await RedisClient.get("converterPrice")
+                await RedisClient.get("converterPrice"),
               );
               const bidPrice = converter["CGO-USDT"].bid[0];
               const askPrice = converter["CGO-USDT"].ask[0];
               const baseUsdtPrice = parseFloat(
-                parseFloat((bidPrice + askPrice) / 2).toFixed(6)
+                parseFloat((bidPrice + askPrice) / 2).toFixed(6),
               );
               if (baseUsdtPrice > 0 && bidPrice > 0 && askPrice > 0) {
                 if (Object.entries(cgoData).length != 0) {
                   const lastPrice = cgoData.lastPrice;
                   const upperLimit = parseFloat(
-                    parseFloat(lastPrice * 1.001).toFixed(6)
+                    parseFloat(lastPrice * 1.001).toFixed(6),
                   );
                   const lowerLimit = parseFloat(
-                    parseFloat(lastPrice * 0.999).toFixed(6)
+                    parseFloat(lastPrice * 0.999).toFixed(6),
                   );
                   console.log(
                     "prices",
                     upperLimit,
                     lastPrice,
                     lowerLimit,
-                    baseUsdtPrice
+                    baseUsdtPrice,
                   );
                   if (upperLimit > baseUsdtPrice && baseUsdtPrice > lowerLimit)
                     generateOrder = false;
@@ -122,7 +122,7 @@ module.exports = {
                 if (generateOrder) {
                   for (i = 1; i <= 10; i++) {
                     usdtPrice = parseFloat(
-                      parseFloat(baseUsdtPrice * (1 + i * 0.002)).toFixed(6)
+                      parseFloat(baseUsdtPrice * (1 + i * 0.002)).toFixed(6),
                     );
                     uniqueId = uuid();
                     newOrder = new spreadBotGeneratedOrders({
@@ -140,7 +140,7 @@ module.exports = {
                     newOrder.save();
                     openOrders.push(uniqueId);
                     usdtPrice = parseFloat(
-                      parseFloat(baseUsdtPrice * (1 - i * 0.002)).toFixed(6)
+                      parseFloat(baseUsdtPrice * (1 - i * 0.002)).toFixed(6),
                     );
                     uniqueId = uuid();
                     newOrder = new spreadBotGeneratedOrders({
@@ -178,15 +178,15 @@ module.exports = {
                 const lastPrice = cgoData.lastPrice;
                 const baseSellPrice = parseFloat(
                   // parseFloat(lastPrice * 1.003).toFixed(6)
-                  parseFloat(lastPrice * 1.01).toFixed(6)
+                  parseFloat(lastPrice * 1.01).toFixed(6),
                 );
                 const baseBuyPrice = parseFloat(
                   // parseFloat(lastPrice * 0.997).toFixed(6)
-                  parseFloat(lastPrice * 0.99).toFixed(6)
+                  parseFloat(lastPrice * 0.99).toFixed(6),
                 );
                 for (i = 1; i <= 10; i++) {
                   usdtPrice = parseFloat(
-                    parseFloat(baseSellPrice * (1 + 0.002 * i)).toFixed(6)
+                    parseFloat(baseSellPrice * (1 + 0.002 * i)).toFixed(6),
                   );
                   uniqueId = uuid();
                   newOrder = new spreadBotGeneratedOrders({
@@ -204,7 +204,7 @@ module.exports = {
                   newOrder.save();
                   openOrders.push(uniqueId);
                   usdtPrice = parseFloat(
-                    parseFloat(baseBuyPrice * (1 - 0.002 * i)).toFixed(6)
+                    parseFloat(baseBuyPrice * (1 - 0.002 * i)).toFixed(6),
                   );
                   uniqueId = uuid();
                   newOrder = new spreadBotGeneratedOrders({
@@ -246,13 +246,13 @@ module.exports = {
                 uniqueId: { $nin: openOrders },
               },
               { status: "cancelled" },
-              { multi: true }
+              { multi: true },
             );
         } else {
           await spreadBotGeneratedOrders.updateMany(
             { currency: "CGO", status: "active" },
             { status: "cancelled" },
-            { multi: true }
+            { multi: true },
           );
           arbitrageData.cgoData.lastPrice = 0;
           arbitrageData.cgoData.bidPrice = arbitrageData.cgoData.bidPrice;
@@ -346,13 +346,13 @@ module.exports = {
                 converter = JSON.parse(await RedisClient.get("converterPrice"));
                 usdtPrice = parseFloat(
                   parseFloat(
-                    usdtPrice * (1 - (Math.random() * (1 - 0) + 0) / 1000)
-                  ).toFixed(6)
+                    usdtPrice * (1 - (Math.random() * (1 - 0) + 0) / 1000),
+                  ).toFixed(6),
                 );
                 price = parseFloat(
                   parseFloat(
-                    usdtPrice / converter[getSecondaryPair(pair)].bid[0]
-                  ).toFixed(ExchangePairInfo[exchange][pair].decimalsPrice)
+                    usdtPrice / converter[getSecondaryPair(pair)].bid[0],
+                  ).toFixed(ExchangePairInfo[exchange][pair].decimalsPrice),
                 );
                 // checkPrice = await spreadBotOrders.findOne({
                 //   exchange,
@@ -395,8 +395,8 @@ module.exports = {
                   // }
                   amount = parseFloat(
                     parseFloat(
-                      Math.random() * (maxAmount - minAmount) + minAmount
-                    ).toFixed(ExchangePairInfo[exchange][pair].decimalsAmount)
+                      Math.random() * (maxAmount - minAmount) + minAmount,
+                    ).toFixed(ExchangePairInfo[exchange][pair].decimalsAmount),
                   );
                 } else {
                   // if ([8, 9, 10].includes(j)) {
@@ -414,8 +414,8 @@ module.exports = {
                   // }
                   amount = parseFloat(
                     parseFloat(
-                      Math.random() * (maxAmount - minAmount) + minAmount
-                    ).toFixed(ExchangePairInfo[exchange][pair].decimalsAmount)
+                      Math.random() * (maxAmount - minAmount) + minAmount,
+                    ).toFixed(ExchangePairInfo[exchange][pair].decimalsAmount),
                   );
                 }
                 // usdtTotal = parseFloat(
@@ -430,7 +430,7 @@ module.exports = {
                 // );
                 total = parseFloat(parseFloat(amount * price).toFixed(4));
                 usdtTotal = parseFloat(
-                  parseFloat(amount * usdtPrice).toFixed(4)
+                  parseFloat(amount * usdtPrice).toFixed(4),
                 );
                 if (amount > 0) {
                   orderData = {
@@ -568,16 +568,16 @@ module.exports = {
             `updateOrdersMin-SBC-${min}_in 3 order ${i}`,
             orderId,
             status,
-            filledQty
+            filledQty,
           );
           fees = statusData.fees;
           feeCurrency = statusData.feeCurrency;
           feesUSDT = statusData.feesUSDT;
           updatedTotal = parseFloat(
-            parseFloat(statusData.updatedTotal).toFixed(6)
+            parseFloat(statusData.updatedTotal).toFixed(6),
           );
           updatedUsdtTotal = parseFloat(
-            parseFloat(filledQty * usdtPrice).toFixed(6)
+            parseFloat(filledQty * usdtPrice).toFixed(6),
           );
           //   order.status = status;
           //   order.filledQty = filledQty;
@@ -605,18 +605,18 @@ module.exports = {
               feesUSDT: feesUSDT,
               updatedTotal: updatedTotal,
               updatedUsdtTotal: updatedUsdtTotal,
-            }
+            },
           );
           logger.info(
             `updateOrdersMin-SBC-${min}_in 4 order ${i} status updated`,
-            orderId
+            orderId,
           );
           if (filledQty > prevFilledQty) {
             logger.info(
               `updateOrdersMin-SBC-${min}_in 5 order ${i} filledQty greater`,
               orderId,
               prevFilledQty,
-              filledQty
+              filledQty,
             );
             updatedFilledQty = filledQty - prevFilledQty;
             mappingId = order.mappingId;
@@ -648,7 +648,7 @@ module.exports = {
             // generatedOrder.save();
             logger.info(
               `updateOrdersMin-SBC-${min}_in 6 order ${i} order details updated`,
-              orderId
+              orderId,
             );
           }
           //   order.save();
@@ -660,7 +660,7 @@ module.exports = {
         flags[`updateOrders-SBC-${min}-time`] = new Date();
         logger.info(
           `updateOrders-SBC-${min} flag set 12`,
-          flags[`updateOrders-SBC-${min}`]
+          flags[`updateOrders-SBC-${min}`],
         );
       } else {
         logger.info(`updateOrders-SBC-${min}_flag_false`);
@@ -730,7 +730,7 @@ module.exports = {
           if (orders.length == 0 && openOrders[i].status == "stopped") {
             await spreadBotDetails.findOneAndUpdate(
               { uniqueId: mappingId },
-              { status: "cancelled" }
+              { status: "cancelled" },
             );
           }
         }
@@ -739,7 +739,7 @@ module.exports = {
         flags[`updateOrdersMin-SBC-time`] = new Date();
         logger.info(
           `updateOrdersMin-SBC_in 9 set flag`,
-          flags[`updateOrdersMin-SBC`]
+          flags[`updateOrdersMin-SBC`],
         );
       } else {
         logger.info("updateOrdersMin-SBC_flag_false");
@@ -811,6 +811,34 @@ module.exports = {
       if (!flags["autoCancel-SBC"]) {
         flags["autoCancel-SBC"] = true;
         flags["autoCancel-SBC-time"] = new Date();
+
+        const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+        const autoCancelExchanges = ["biconomy"];
+        await spreadBotOrders.updateMany(
+          {
+            exchange: { $in: autoCancelExchanges },
+            status: "active",
+            cancelling: true,
+            cancellingSince: { $lt: thirtyMinsAgo },
+          },
+          {
+            $set: { status: "cancelled" },
+          },
+        );
+
+        await spreadBotOrders.updateMany(
+          {
+            status: "active",
+            cancelling: true,
+            cancellingSince: { $lt: thirtyMinsAgo },
+            cancelAttempts: { $gte: 3 },
+          },
+          {
+            $set: { status: "cancelled" },
+          },
+        );
+
+
         const orders = await spreadBotOrders
           .find({
             status: "active",
@@ -845,7 +873,13 @@ module.exports = {
             usdtPrice: usdtPrice,
             ...accountData,
           };
-          await CancelOrder(exchange, cancelData);
+          let isSuccess = await CancelOrder(exchange, cancelData);
+          if (isSuccess) {
+            await spreadBotOrders.updateOne(
+              { _id: order._id },
+              { $inc: { cancelAttempts: 1 } }
+            );
+          }
         }
         flags["autoCancel-SBC"] = false;
         flags["autoCancel-SBC-time"] = new Date();
@@ -865,8 +899,8 @@ module.exports = {
         if (order.status == "active") {
           await spreadBotOrders.updateMany(
             { mappingId: orderId },
-            { cancelling: true },
-            { multi: true }
+            { cancelling: true, cancellingSince: new Date() },
+            { multi: true },
           );
           order.status = "stopped";
           order.markModified("status");
@@ -986,7 +1020,7 @@ module.exports = {
       return responseHelper.successWithData(
         res,
         "Got data successfully",
-        orders
+        orders,
       );
     } catch (error) {
       logger.error(`spreadBotController_getOrders_error`, error);
@@ -1079,72 +1113,72 @@ module.exports = {
       if (flags[`updateOrders-SBC-0`]) {
         lastUpdateTime = new Date(flags[`updateOrders-SBC-0-time`]);
         difference = parseFloat(
-          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0)
+          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0),
         );
         if (difference > 3) flags[`updateOrders-SBC-0`] = false;
       }
       if (flags[`updateOrders-SBC-1`]) {
         lastUpdateTime = new Date(flags[`updateOrders-SBC-1-time`]);
         difference = parseFloat(
-          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0)
+          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0),
         );
         if (difference > 3) flags[`updateOrders-SBC-1`] = false;
       }
       if (flags[`updateCancellingOrders-SBC`]) {
         lastUpdateTime = new Date(flags[`updateCancellingOrders-SBC-time`]);
         difference = parseFloat(
-          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0)
+          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0),
         );
         if (difference > 3) flags[`updateCancellingOrders-SBC`] = false;
       }
       if (flags[`updateOrdersMin-SBC`]) {
         lastUpdateTime = new Date(flags[`updateOrdersMin-SBC-time`]);
         difference = parseFloat(
-          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0)
+          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0),
         );
         if (difference > 3) flags[`updateOrdersMin-SBC`] = false;
       }
       if (flags[`updateOrders10Min-SBC`]) {
         lastUpdateTime = new Date(flags[`updateOrders10Min-SBC-time`]);
         difference = parseFloat(
-          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0)
+          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0),
         );
         if (difference > 3) flags[`updateOrders10Min-SBC`] = false;
       }
       if (flags[`placeOrders-SBC`]) {
         lastUpdateTime = new Date(flags[`placeOrders-SBC-time`]);
         difference = parseFloat(
-          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0)
+          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0),
         );
         if (difference > 3) flags[`placeOrders-SBC`] = false;
       }
       if (flags[`autoCancel-SBC`]) {
         lastUpdateTime = new Date(flags[`autoCancel-SBC-time`]);
         difference = parseFloat(
-          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0)
+          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0),
         );
         if (difference > 3) flags[`autoCancel-SBC`] = false;
       }
       if (flags[`cancelExtraOrders-SBC`]) {
         lastUpdateTime = new Date(flags[`cancelExtraOrders-SBC-time`]);
         difference = parseFloat(
-          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0)
+          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0),
         );
         if (difference > 3) flags[`cancelExtraOrders-SBC`] = false;
       }
       if (flags[`placeExternalOrders-SBC`]) {
         lastUpdateTime = new Date(flags[`placeExternalOrders-SBC-time`]);
         difference = parseFloat(
-          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0)
+          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0),
         );
         if (difference > 3) flags[`placeExternalOrders-SBC`] = false;
       }
       if (flags[`updateExternalExchangeOrders-SBC`]) {
         lastUpdateTime = new Date(
-          flags[`updateExternalExchangeOrders-SBC-time`]
+          flags[`updateExternalExchangeOrders-SBC-time`],
         );
         difference = parseFloat(
-          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0)
+          parseFloat((currentTime - lastUpdateTime) / 1000 / 60).toFixed(0),
         );
         if (difference > 3) flags[`updateExternalExchangeOrders-SBC`] = false;
       }
@@ -1169,8 +1203,8 @@ module.exports = {
         }
         await spreadBotOrders.updateMany(
           { status: "active", cancelling: false, refId: { $nin: openOrders } },
-          { cancelling: true },
-          { multi: true }
+          { cancelling: true, cancellingSince: new Date() },
+          { multi: true },
         );
 
         flags[`cancelExtraOrders-SBC`] = false;
@@ -1238,35 +1272,35 @@ module.exports = {
             total = Math.abs(total);
             usdtPrice = parseFloat(parseFloat(total / totalQty).toFixed(6));
             const converter = JSON.parse(
-              await RedisClient.get("converterPrice")
+              await RedisClient.get("converterPrice"),
             );
             price = parseFloat(
               parseFloat(
-                usdtPrice / converter[getSecondaryPair(pair)].bid[0]
-              ).toFixed(6)
+                usdtPrice / converter[getSecondaryPair(pair)].bid[0],
+              ).toFixed(6),
             );
             amountOz = parseFloat(
-              parseFloat(totalQty / ounceConversion).toFixed(3)
+              parseFloat(totalQty / ounceConversion).toFixed(3),
             );
             if (amountOz > 0) {
               priceOz = parseFloat(
-                parseFloat(price * ounceConversion).toFixed(2)
+                parseFloat(price * ounceConversion).toFixed(2),
               );
               // if (placeType == 'sell')
               //   priceOz = parseFloat(parseFloat(priceOz * 0.997).toFixed(2));
               // else
               //   priceOz = parseFloat(parseFloat(priceOz * 1.003).toFixed(2));
               const stonexTotal = parseFloat(
-                parseFloat(amountOz * priceOz).toFixed(4)
+                parseFloat(amountOz * priceOz).toFixed(4),
               );
               const stonexUsdtTotal = parseFloat(
-                parseFloat(totalQty * usdtPrice).toFixed(4)
+                parseFloat(totalQty * usdtPrice).toFixed(4),
               );
               calculatedPrice = priceOz;
               calculatedUsdtPrice = usdtPrice;
               if (placeType == "buy") {
                 marketPrice = parseFloat(
-                  parseFloat(converter[`XAU-USD`].ask[0] * 1.0002).toFixed(2)
+                  parseFloat(converter[`XAU-USD`].ask[0] * 1.0002).toFixed(2),
                 );
                 priceOz =
                   marketPrice <= calculatedPrice
@@ -1275,12 +1309,12 @@ module.exports = {
                 usdtPrice = parseFloat(
                   parseFloat(
                     parseFloat(priceOz / ounceConversion) *
-                      converter[getSecondaryPair(`XAU-USD`)].ask[0]
-                  ).toFixed(6)
+                      converter[getSecondaryPair(`XAU-USD`)].ask[0],
+                  ).toFixed(6),
                 );
               } else {
                 marketPrice = parseFloat(
-                  parseFloat(converter[`XAU-USD`].bid[0] * 0.9998).toFixed(2)
+                  parseFloat(converter[`XAU-USD`].bid[0] * 0.9998).toFixed(2),
                 );
                 priceOz =
                   marketPrice >= calculatedPrice
@@ -1289,8 +1323,8 @@ module.exports = {
                 usdtPrice = parseFloat(
                   parseFloat(
                     parseFloat(priceOz / ounceConversion) *
-                      converter[getSecondaryPair(`XAU-USD`)].bid[0]
-                  ).toFixed(6)
+                      converter[getSecondaryPair(`XAU-USD`)].bid[0],
+                  ).toFixed(6),
                 );
               }
               const uniqueId = uuid();
@@ -1327,7 +1361,7 @@ module.exports = {
                 await spreadBotOrders.updateMany(
                   { uniqueId: { $in: refOrders } },
                   { externalExchangeId: uniqueId },
-                  { multi: true }
+                  { multi: true },
                 );
               }
             }
@@ -1369,10 +1403,10 @@ module.exports = {
               orderData = await stonex.orderStatus({ orderId });
               status = orderData[0].status;
               avgPrice = parseFloat(
-                parseFloat(orderData[0].averagePrice).toFixed(2)
+                parseFloat(orderData[0].averagePrice).toFixed(2),
               );
               avgPriceUsdt = parseFloat(
-                parseFloat(avgPrice / ounceConversion).toFixed(6)
+                parseFloat(avgPrice / ounceConversion).toFixed(6),
               );
               filledQty = parseFloat(orderData[0].cumQty);
               if (status == "FILLED") status = "completed";

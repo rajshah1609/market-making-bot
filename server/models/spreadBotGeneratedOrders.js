@@ -18,6 +18,8 @@ let spreadBotGeneratedOrders = new Schema(
   }
 );
 
+spreadBotGeneratedOrders.index({ currency: 1, status: 1 });
+
 //export the model
 module.exports = mongoose.model(
   "spreadBotGeneratedOrders",

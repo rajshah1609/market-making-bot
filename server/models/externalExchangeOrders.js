@@ -34,6 +34,9 @@ let externalExchangeOrders = new Schema(
   }
 );
 
+externalExchangeOrders.index({ exchange: 1, pair: 1, status: 1 });
+externalExchangeOrders.index({ orderId: 1, exchange: 1 });
+
 //export the model
 module.exports = mongoose.model(
   "externalExchangeOrders",

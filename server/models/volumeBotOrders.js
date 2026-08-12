@@ -29,5 +29,10 @@ let volumeBotOrders = new Schema(
   }
 );
 
+volumeBotOrders.index({ exchange: 1, pair: 1, status: 1, type: 1, updatedAt: -1 });
+volumeBotOrders.index({ exchange: 1, pair: 1, status: 1 });
+volumeBotOrders.index({ exchangeId: 1, exchange: 1 });
+volumeBotOrders.index({ mappingId: 1 });
+
 //export the model
 module.exports = mongoose.model("volumeBotOrders", volumeBotOrders);

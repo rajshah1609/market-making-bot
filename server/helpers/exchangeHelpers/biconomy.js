@@ -35,7 +35,7 @@ function makeV3GET(path, params, apiKey, apiSecret) {
     ? `${baseURL}${path}?${queryString}`
     : `${baseURL}${path}`;
 
-  return { url, headers };
+  return { url, headers, signPayload };
 }
 
 function makeV3POST(path, bodyObj, apiKey, apiSecret) {
@@ -61,7 +61,7 @@ function makeV3POST(path, bodyObj, apiKey, apiSecret) {
 
   const url = `${baseURL}${path}`;
 
-  return { url, headers, rawJsonBody };
+  return { url, headers, rawJsonBody, signPayload };
 }
 
 module.exports = {
@@ -113,7 +113,7 @@ module.exports = {
         type: "LIMIT",
       };
 
-      const { url, headers, rawJsonBody } = makeV3POST(
+      const { url, headers, rawJsonBody, signPayload } = makeV3POST(
         "/api/v3/trade/order",
         body,
         apiKey,
@@ -125,7 +125,15 @@ module.exports = {
         data: rawJsonBody,
       };
 
+      logger.info(
+        `[BICONOMY_PLACEORDER_DEBUG] REQ -> URL: ${url} | Body: "${rawJsonBody}" | SignPayload: "${signPayload}"`
+      );
+
       const orderResponse = await axiosHelper.makePOSTHeaderRequest(config);
+      logger.info(
+        `[BICONOMY_PLACEORDER_DEBUG] RESP -> ${JSON.stringify(orderResponse.data)}`
+      );
+
       return orderResponse.data;
     } catch (error) {
       if (error.response) {
@@ -142,6 +150,9 @@ module.exports = {
 
   orderStatus: async (reqData) => {
     try {
+      logger.info(
+        `[BICONOMY_ORDERSTATUS_DEBUG] Check starting for orderId: ${reqData.orderId}, pair: ${reqData.pair}`
+      );
       let orderData = await module.exports.openOrder(reqData);
       if (
         orderData !== "error" &&
@@ -149,8 +160,15 @@ module.exports = {
         orderData.code == 0 &&
         orderData.data
       ) {
+        logger.info(
+          `[BICONOMY_ORDERSTATUS_DEBUG] Found in openOrder:`,
+          JSON.stringify(orderData.data)
+        );
         return orderData;
       } else {
+        logger.info(
+          `[BICONOMY_ORDERSTATUS_DEBUG] Not in openOrder. Checking completedOrder...`
+        );
         orderData = await module.exports.completedOrder(reqData);
         if (
           orderData !== "error" &&
@@ -158,8 +176,15 @@ module.exports = {
           orderData.code == 0 &&
           orderData.data
         ) {
+          logger.info(
+            `[BICONOMY_ORDERSTATUS_DEBUG] Found in completedOrder:`,
+            JSON.stringify(orderData.data)
+          );
           return orderData;
         } else {
+          logger.info(
+            `[BICONOMY_ORDERSTATUS_DEBUG] Not found in openOrder or completedOrder for orderId: ${reqData.orderId}`
+          );
           return "error";
         }
       }
@@ -245,11 +270,17 @@ module.exports = {
       const apiSecret = reqData.apiSecret;
       const orderId = Number(reqData.orderId) || reqData.orderId;
 
-      const { url, headers } = makeV3GET(
+      const { url, headers, signPayload } = makeV3GET(
         "/api/v3/trade/historyOrder/detail",
         { orderId },
         apiKey,
         apiSecret
+      );
+
+      logger.info(
+        `[BICONOMY_ORDERSTATUS_DEBUG] Sending historyOrder/detail REQ -> URL: ${url} | Headers: ${JSON.stringify(
+          headers
+        )} | SignPayload: "${signPayload}"`
       );
 
       const orderResponse = await axiosHelper.makeGETHeaderRequest({
@@ -257,6 +288,12 @@ module.exports = {
         headers,
       });
       const resData = orderResponse.data;
+
+      logger.info(
+        `[BICONOMY_ORDERSTATUS_DEBUG] historyOrder/detail RESP: ${JSON.stringify(
+          resData
+        )}`
+      );
 
       if (
         resData &&
@@ -287,11 +324,17 @@ module.exports = {
       const orderId = Number(reqData.orderId) || reqData.orderId;
       const pair = convertPairForExchange(reqData.pair);
 
-      const { url, headers } = makeV3GET(
+      const { url, headers, signPayload } = makeV3GET(
         "/api/v3/trade/openOrder/detail",
         { orderId, symbol: pair },
         apiKey,
         apiSecret
+      );
+
+      logger.info(
+        `[BICONOMY_ORDERSTATUS_DEBUG] Sending openOrder/detail REQ -> URL: ${url} | Headers: ${JSON.stringify(
+          headers
+        )} | SignPayload: "${signPayload}"`
       );
 
       const orderResponse = await axiosHelper.makeGETHeaderRequest({
@@ -299,6 +342,12 @@ module.exports = {
         headers,
       });
       const resData = orderResponse.data;
+
+      logger.info(
+        `[BICONOMY_ORDERSTATUS_DEBUG] openOrder/detail RESP: ${JSON.stringify(
+          resData
+        )}`
+      );
 
       if (
         resData &&

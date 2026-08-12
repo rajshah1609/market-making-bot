@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-let spreadBotMaintainOrders = new Schema(
+let spreadBotOrdersArchive = new Schema(
   {
     orderId: { type: String, required: true },
     uniqueId: { type: String, unique: true, required: true },
@@ -21,20 +21,22 @@ let spreadBotMaintainOrders = new Schema(
     feeCurrency: { type: String, default: "USD" },
     feesUSDT: { type: Number, default: 0 },
     status: { type: String, required: true, default: "active" },
-    currentBalance: { type: Number, required: true, default: 0 },
-    currency: { type: String, required: true, default: "" },
+    cancelling: { type: Boolean, default: false },
+    cancellingSince: { type: Date, default: null },
+    cancellingAttempts: { type: Number, default: 0 },
+    cancelAttempts: { type: Number, default: 0 },
+    externalExchangeId: { type: String, default: "pending" },
+    refId: { type: String },
   },
   {
     timestamps: true,
   }
 );
 
-spreadBotMaintainOrders.index({ exchange: 1, pair: 1, status: 1, type: 1 });
-spreadBotMaintainOrders.index({ orderId: 1, exchange: 1 });
-spreadBotMaintainOrders.index({ mappingId: 1 });
+spreadBotOrdersArchive.index({ exchange: 1, pair: 1, status: 1, type: 1 });
+spreadBotOrdersArchive.index({ exchange: 1, pair: 1, cancelling: 1 });
+spreadBotOrdersArchive.index({ orderId: 1, exchange: 1 });
+spreadBotOrdersArchive.index({ mappingId: 1 });
+spreadBotOrdersArchive.index({ status: 1, cancelling: 1 });
 
-//export the model
-module.exports = mongoose.model(
-  "spreadBotMaintainOrders",
-  spreadBotMaintainOrders
-);
+module.exports = mongoose.model("spreadBotOrdersArchives", spreadBotOrdersArchive);
