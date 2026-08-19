@@ -52,7 +52,6 @@ module.exports = {
         amountBuy,
         amountSell,
         status: "active",
-        mappedOrders: [],
         maxOrders,
         started: false,
         percentGap: parseFloat(parseFloat(percentGap / 1000).toFixed(4)),
@@ -296,7 +295,6 @@ module.exports = {
           orderId,
           mappingId,
           refId,
-          mappedOrders,
           accountData,
           refOrders,
           uniqueId,
@@ -313,7 +311,6 @@ module.exports = {
         for (i = 0; i < orders.length; i++) {
           order = orders[i];
           mappingId = order.uniqueId;
-          mappedOrders = order.mappedOrders;
           exchange = order.exchange;
           pair = order.pair;
           currency = pair.split("-")[0];
@@ -471,7 +468,6 @@ module.exports = {
                       placedAmountSell = placedAmountSell + amount;
                       totalAmountSell = totalAmountSell + usdtTotal;
                     }
-                    mappedOrders.push(uniqueId);
                     refOrders.push(uniqueId);
                     generatedOrder.mappedOrders = refOrders;
                     generatedOrder.markModified("mappedOrders");
@@ -481,7 +477,6 @@ module.exports = {
               }
             }
           }
-          order.mappedOrders = mappedOrders;
           order.placedAmountBuy = placedAmountBuy;
           order.placedTotalBuy = totalAmountBuy;
           order.placedAmountSell = placedAmountSell;
@@ -490,7 +485,6 @@ module.exports = {
           order.markModified("placedTotalBuy");
           order.markModified("placedAmountSell");
           order.markModified("placedTotalSell");
-          order.markModified("mappedOrders");
           order.save();
         }
         flags["placeOrders-SBC"] = false;
@@ -958,55 +952,57 @@ module.exports = {
         .sort({ createdAt: -1 })
         .limit(50)
         .lean();
+
+      const uniqueIds = openOrders.map((o) => o.uniqueId);
+
+      const aggregatedData = await spreadBotOrders.aggregate([
+        {
+          $match: {
+            status: "active",
+            mappingId: { $in: uniqueIds },
+          },
+        },
+        {
+          $group: {
+            _id: { mappingId: "$mappingId", type: "$type" },
+            total: { $sum: "$originalQty" },
+            USDT: { $sum: "$usdtTotal" },
+          },
+        },
+      ]);
+
+      const mappingData = {};
+      aggregatedData.forEach((item) => {
+        if (!mappingData[item._id.mappingId]) {
+          mappingData[item._id.mappingId] = {};
+        }
+        mappingData[item._id.mappingId][item._id.type] = {
+          total: item.total,
+          USDT: item.USDT,
+        };
+      });
+
       let orders = [],
         i,
-        order,
-        data;
+        order;
       for (i = 0; i < openOrders.length; i++) {
         order = openOrders[i];
-        data = await spreadBotOrders.aggregate([
-          {
-            $match: {
-              status: "active",
-              type: "buy",
-              mappingId: order.uniqueId,
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: "$originalQty" },
-              USDT: { $sum: "$usdtTotal" },
-            },
-          },
-        ]);
-        order.currentBuyTotal = data[0] ? data[0].total : 0;
-        order.currentBuyUSDT = data[0] ? data[0].USDT : 0;
-        data = await spreadBotOrders.aggregate([
-          {
-            $match: {
-              status: "active",
-              type: "sell",
-              mappingId: order.uniqueId,
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: "$originalQty" },
-              USDT: { $sum: "$usdtTotal" },
-            },
-          },
-        ]);
-        order.currentSellTotal = data[0] ? data[0].total : 0;
-        order.currentSellUSDT = data[0] ? data[0].USDT : 0;
+        
+        const buyData = mappingData[order.uniqueId]?.buy || { total: 0, USDT: 0 };
+        order.currentBuyTotal = buyData.total;
+        order.currentBuyUSDT = buyData.USDT;
+        
+        const sellData = mappingData[order.uniqueId]?.sell || { total: 0, USDT: 0 };
+        order.currentSellTotal = sellData.total;
+        order.currentSellUSDT = sellData.USDT;
+        
         orders.push(order);
       }
       if (orders.length < 50) {
         const remainingOrders = await spreadBotDetails
           .find({ status: { $ne: "active" } })
           .sort({ createdAt: -1 })
-          .limit(50 - `${orders.length}`)
+          .limit(50 - orders.length)
           .lean();
         for (i = 0; i < remainingOrders.length; i++) {
           order = remainingOrders[i];
@@ -1040,7 +1036,8 @@ module.exports = {
           data;
         const openOrders = await spreadBotOrders
           .find({ status: "active", mappingId: uniqueId })
-          .sort({ usdtPrice: -1 });
+          .sort({ usdtPrice: -1 })
+          .lean();
         for (i = 0; i < openOrders.length; i++) {
           tempOrder = openOrders[i];
           orders.push(tempOrder);
@@ -1052,47 +1049,43 @@ module.exports = {
             mappingId: uniqueId,
           })
           .sort({ createdAt: -1 })
+          .limit(100)
           .lean();
         for (i = 0; i < completedOrders.length; i++) {
           tempOrder = completedOrders[i];
           orders.push(tempOrder);
         }
-        data = await spreadBotOrders.aggregate([
+        const aggregatedData = await spreadBotOrders.aggregate([
           {
             $match: {
               status: "active",
-              type: "buy",
               mappingId: uniqueId,
             },
           },
           {
             $group: {
-              _id: null,
+              _id: "$type",
               total: { $sum: "$originalQty" },
               USDT: { $sum: "$usdtTotal" },
             },
           },
         ]);
-        orderDetails.currentBuyTotal = data[0] ? data[0].total : 0;
-        orderDetails.currentBuyUSDT = data[0] ? data[0].USDT : 0;
-        data = await spreadBotOrders.aggregate([
-          {
-            $match: {
-              status: "active",
-              type: "sell",
-              mappingId: uniqueId,
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: "$originalQty" },
-              USDT: { $sum: "$usdtTotal" },
-            },
-          },
-        ]);
-        orderDetails.currentSellTotal = data[0] ? data[0].total : 0;
-        orderDetails.currentSellUSDT = data[0] ? data[0].USDT : 0;
+
+        const mappingData = {};
+        aggregatedData.forEach((item) => {
+          mappingData[item._id] = {
+            total: item.total,
+            USDT: item.USDT,
+          };
+        });
+
+        const buyData = mappingData["buy"] || { total: 0, USDT: 0 };
+        orderDetails.currentBuyTotal = buyData.total;
+        orderDetails.currentBuyUSDT = buyData.USDT;
+
+        const sellData = mappingData["sell"] || { total: 0, USDT: 0 };
+        orderDetails.currentSellTotal = sellData.total;
+        orderDetails.currentSellUSDT = sellData.USDT;
         return responseHelper.successWithData(res, "Got data sucessfully", {
           orderDetails,
           orders,

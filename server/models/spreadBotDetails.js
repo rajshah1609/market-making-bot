@@ -20,7 +20,6 @@ let spreadBotDetails = new Schema(
     filledAmountSell: { type: Number, required: true, default: 0 },
     placedTotalSell: { type: Number, default: 0 }, //in USDT
     updatedTotalSell: { type: Number, default: 0 }, //in USDT
-    mappedOrders: [],
     status: { type: String, required: true, default: "active" },
     started: { type: Boolean, required: true, default: false },
     // ordersGenerated: { type: Boolean, required: true, default: false },
